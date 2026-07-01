@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL Joins — Deep Dive</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a3d;
+    --text: #e8e8f0;
+    --muted: #7070a0;
+    --accent: #5b8dff;
+    --accent2: #ff6b9d;
+    --accent3: #50e3c2;
+    --accent4: #ffd166;
+    --inner: #ff9a3c;
+    --left: #5b8dff;
+    --right: #ff6b9d;
+    --both: #a855f7;
+    --none-c: #50e3c2;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 80px 40px 60px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(91,141,255,.18) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+  h1 {
+    font-size: clamp(40px, 7vw, 88px);
+    font-weight: 800;
+    letter-spacing: -2px;
+    line-height: 1.0;
+    margin-bottom: 20px;
+  }
+  h1 span { color: var(--accent); }
+  .subtitle {
+    font-size: 18px;
+    color: var(--muted);
+    max-width: 540px;
+    margin: 0 auto;
+    font-weight: 400;
+  }
+
+  /* ── NAV PILLS ── */
+  nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    padding: 0 40px 60px;
+  }
+  nav a {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 8px 18px;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    text-decoration: none;
+    transition: all .2s;
+  }
+  nav a:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── SECTIONS ── */
+  .section {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 60px 40px;
+    border-top: 1px solid var(--border);
+  }
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+  h2 {
+    font-size: clamp(28px, 4vw, 44px);
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 16px;
+  }
+  h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    margin-top: 36px;
+  }
+  p { color: #c0c0d8; margin-bottom: 16px; line-height: 1.75; }
+
+  /* ── SAMPLE DATA ── */
+  .tables-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin: 32px 0;
+  }
+  @media (max-width: 600px) { .tables-grid { grid-template-columns: 1fr; } }
+
+  .data-table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .data-table-wrap .tbl-header {
+    background: var(--surface2);
+    padding: 12px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    padding: 10px 20px;
+    text-align: left;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+  tbody td {
+    padding: 10px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: rgba(91,141,255,.06); }
+  .pk { color: var(--accent4); font-weight: 700; }
+  .fk { color: var(--accent3); font-weight: 700; }
+  .null-v { color: var(--muted); font-style: italic; }
+
+  /* ── JOIN CARDS ── */
+  .join-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .join-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .card-inner::before { background: var(--inner); }
+  .card-left::before { background: var(--left); }
+  .card-right::before { background: var(--right); }
+  .card-full::before { background: linear-gradient(90deg, var(--left), var(--both), var(--right)); }
+  .card-cross::before { background: var(--accent4); }
+  .card-self::before { background: var(--accent3); }
+
+  .card-title {
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+  .card-desc { color: #a0a0c0; margin-bottom: 28px; font-size: 15px; }
+
+  /* ── VENN DIAGRAMS (SVG) ── */
+  .venn-row {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+  .venn-wrap { flex-shrink: 0; }
+  .venn-caption { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); text-align: center; margin-top: 6px; }
+
+  /* ── CODE BLOCKS ── */
+  .code-block {
+    background: #0d0d18;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 16px 0;
+    overflow-x: auto;
+    position: relative;
+  }
+  .code-block pre {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.8;
+    color: #c0c8f0;
+  }
+  .kw { color: #7eb6ff; font-weight: 700; }
+  .fn-c { color: #50e3c2; }
+  .str { color: #ffd166; }
+  .cmt { color: #4a4a70; font-style: italic; }
+  .tbl { color: #ff9a3c; }
+  .col { color: #e8e8f0; }
+  .op { color: #ff6b9d; }
+
+  .code-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  /* ── RESULT TABLES ── */
+  .result-wrap {
+    margin-top: 20px;
+  }
+  .result-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent3);
+    margin-bottom: 10px;
+  }
+
+  /* ── ROW HIGHLIGHTING ── */
+  .row-match { background: rgba(91,141,255,.1); }
+  .row-left-only { background: rgba(91,141,255,.05); }
+  .row-right-only { background: rgba(255,107,157,.05); }
+  .row-null td.null-v { color: #444466; }
+
+  /* ── COMPARISON TABLE ── */
+  .compare-wrap {
+    overflow-x: auto;
+    margin: 32px 0;
+  }
+  .compare-table { width: 100%; border-collapse: collapse; }
+  .compare-table th {
+    padding: 14px 20px;
+    background: var(--surface2);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    text-align: left;
+  }
+  .compare-table td {
+    padding: 14px 20px;
+    border: 1px solid var(--border);
+    font-size: 14px;
+    color: #c0c0d8;
+    vertical-align: top;
+  }
+  .compare-table tr:hover td { background: rgba(255,255,255,.02); }
+  .join-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .badge-inner { background: rgba(255,154,60,.15); color: var(--inner); border: 1px solid rgba(255,154,60,.3); }
+  .badge-left  { background: rgba(91,141,255,.15); color: var(--left); border: 1px solid rgba(91,141,255,.3); }
+  .badge-right { background: rgba(255,107,157,.15); color: var(--right); border: 1px solid rgba(255,107,157,.3); }
+  .badge-full  { background: rgba(168,85,247,.15); color: #c084fc; border: 1px solid rgba(168,85,247,.3); }
+  .badge-cross { background: rgba(255,209,102,.15); color: var(--accent4); border: 1px solid rgba(255,209,102,.3); }
+  .badge-self  { background: rgba(80,227,194,.15); color: var(--accent3); border: 1px solid rgba(80,227,194,.3); }
+  .check { color: var(--accent3); }
+  .cross-x { color: var(--accent2); }
+
+  /* ── TIPS ── */
+  .tip-box {
+    background: rgba(91,141,255,.07);
+    border: 1px solid rgba(91,141,255,.25);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 20px 0;
+    font-size: 14px;
+    color: #b0b8e8;
+  }
+  .tip-box strong { color: var(--accent); }
+
+  .warn-box {
+    background: rgba(255,107,157,.07);
+    border: 1px solid rgba(255,107,157,.25);
+    border-left: 3px solid var(--accent2);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 20px 0;
+    font-size: 14px;
+    color: #e0b0c0;
+  }
+  .warn-box strong { color: var(--accent2); }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 60px 40px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .section { animation: fadeUp .5s ease both; }
+
+  /* ── GRID LAYOUT FOR PERF TIPS ── */
+  .tips-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-top: 24px;
+  }
+  .tip-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .tip-card .tip-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--border);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .tip-card h4 { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+  .tip-card p { font-size: 13px; margin: 0; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════ HEADER ═══════════════════════════════ -->
+<header>
+  <p class="eyebrow">Reference Guide</p>
+  <h1>SQL <span>Joins</span><br>Deep Dive</h1>
+  <p class="subtitle">Every join type explained with diagrams, sample data, live queries, and result sets.</p>
+</header>
+
+<nav>
+  <a href="#data">Sample Data</a>
+  <a href="#inner">INNER JOIN</a>
+  <a href="#left">LEFT JOIN</a>
+  <a href="#right">RIGHT JOIN</a>
+  <a href="#full">FULL OUTER</a>
+  <a href="#cross">CROSS JOIN</a>
+  <a href="#self">SELF JOIN</a>
+  <a href="#compare">Comparison</a>
+  <a href="#perf">Performance</a>
+</nav>
+
+<!-- ═══════════════════════════════ SAMPLE DATA ═══════════════════════════ -->
+<section class="section" id="data">
+  <p class="section-label">01 — Foundation</p>
+  <h2>The Sample Data</h2>
+  <p>All examples in this guide use two tables: <strong>employees</strong> and <strong>departments</strong>. Study them carefully — understanding the relationships between rows is the key to understanding joins.</p>
+
+  <div class="tables-grid">
+    <div class="data-table-wrap">
+      <div class="tbl-header">📋 employees</div>
+      <table>
+        <thead><tr><th>id</th><th>name</th><th>dept_id</th><th>salary</th></tr></thead>
+        <tbody>
+          <tr><td class="pk">1</td><td>Alice</td><td class="fk">10</td><td>90000</td></tr>
+          <tr><td class="pk">2</td><td>Bob</td><td class="fk">20</td><td>75000</td></tr>
+          <tr><td class="pk">3</td><td>Carol</td><td class="fk">10</td><td>82000</td></tr>
+          <tr><td class="pk">4</td><td>Dave</td><td class="fk">30</td><td>68000</td></tr>
+          <tr><td class="pk">5</td><td>Eve</td><td class="null-v">NULL</td><td>95000</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="data-table-wrap">
+      <div class="tbl-header">🏢 departments</div>
+      <table>
+        <thead><tr><th>id</th><th>name</th><th>location</th></tr></thead>
+        <tbody>
+          <tr><td class="pk">10</td><td>Engineering</td><td>NYC</td></tr>
+          <tr><td class="pk">20</td><td>Marketing</td><td>LA</td></tr>
+          <tr><td class="pk">30</td><td>Sales</td><td>Chicago</td></tr>
+          <tr><td class="pk">40</td><td>HR</td><td>NYC</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="tip-box">
+    <strong>Key observations:</strong> Employee <em>Eve</em> has no department (NULL dept_id). Department <em>HR (40)</em> has no employees. These edge cases reveal the behavioural differences between join types.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ INNER JOIN ═══════════════════════════ -->
+<section class="section" id="inner">
+  <p class="section-label">02 — Join Types</p>
+  <h2>INNER JOIN</h2>
+
+  <div class="join-card card-inner">
+    <div class="card-title">Returns only matching rows from both tables</div>
+    <div class="card-desc">The most common join. If there's no match on the join condition, the row is excluded entirely from the result set.</div>
+
+    <div class="venn-row">
+      <div class="venn-wrap">
+        <svg width="160" height="100" viewBox="0 0 160 100">
+          <circle cx="55" cy="50" r="40" fill="rgba(91,141,255,.12)" stroke="#5b8dff" stroke-width="2"/>
+          <circle cx="105" cy="50" r="40" fill="rgba(255,107,157,.12)" stroke="#ff6b9d" stroke-width="2"/>
+          <!-- intersection filled -->
+          <clipPath id="clip-inner-r"><circle cx="105" cy="50" r="40"/></clipPath>
+          <circle cx="55" cy="50" r="40" fill="rgba(255,154,60,.7)" clip-path="url(#clip-inner-r)"/>
+          <text x="35" y="54" font-family="JetBrains Mono" font-size="9" fill="#5b8dff">A</text>
+          <text x="115" y="54" font-family="JetBrains Mono" font-size="9" fill="#ff6b9d">B</text>
+        </svg>
+        <p class="venn-caption">A ∩ B</p>
+      </div>
+      <div style="flex:1; min-width:200px;">
+        <p style="margin:0; font-size:14px; color:#a0a0c0;">Only rows where <strong style="color:#e8e8f0">employees.dept_id = departments.id</strong> exist in both tables are returned. Eve (NULL dept_id) and HR (no employees) are both excluded.</p>
+      </div>
+    </div>
+
+    <p class="code-label">SQL Query</p>
+    <div class="code-block"><pre><span class="kw">SELECT</span>
+  e.id,
+  e.name        <span class="kw">AS</span> employee,
+  d.name        <span class="kw">AS</span> department,
+  d.location,
+  e.salary
+<span class="kw">FROM</span>   <span class="tbl">employees</span> e
+<span class="kw">INNER JOIN</span> <span class="tbl">departments</span> d
+  <span class="kw">ON</span> e.dept_id <span class="op">=</span> d.id
+<span class="kw">ORDER BY</span> e.id;</pre></div>
+
+    <div class="result-wrap">
+      <p class="result-label">⟶ Result Set (4 rows)</p>
+      <div class="data-table-wrap">
+        <table>
+          <thead><tr><th>id</th><th>employee</th><th>department</th><th>location</th><th>salary</th></tr></thead>
+          <tbody>
+            <tr class="row-match"><td>1</td><td>Alice</td><td>Engineering</td><td>NYC</td><td>90000</td></tr>
+            <tr class="row-match"><td>2</td><td>Bob</td><td>Marketing</td><td>LA</td><td>75000</td></tr>
+            <tr class="row-match"><td>3</td><td>Carol</td><td>Engineering</td><td>NYC</td><td>82000</td></tr>
+            <tr class="row-match"><td>4</td><td>Dave</td><td>Sales</td><td>Chicago</td><td>68000</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="warn-box"><strong>Notice:</strong> Eve (no dept) and HR (no employees) are completely absent. 5 employees → 4 rows.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ LEFT JOIN ════════════════════════════ -->
+<section class="section" id="left">
+  <h2>LEFT JOIN</h2>
+
+  <div class="join-card card-left">
+    <div class="card-title">All rows from the left table, matched rows from the right</div>
+    <div class="card-desc">Every row in the left (first) table is preserved. Where no match exists in the right table, NULL values fill the right-side columns.</div>
+
+    <div class="venn-row">
+      <div class="venn-wrap">
+        <svg width="160" height="100" viewBox="0 0 160 100">
+          <circle cx="55" cy="50" r="40" fill="rgba(91,141,255,.55)" stroke="#5b8dff" stroke-width="2"/>
+          <circle cx="105" cy="50" r="40" fill="rgba(255,107,157,.08)" stroke="#ff6b9d" stroke-width="2"/>
+          <clipPath id="clip-left-r"><circle cx="105" cy="50" r="40"/></clipPath>
+          <circle cx="55" cy="50" r="40" fill="rgba(91,141,255,.55)" clip-path="url(#clip-left-r)"/>
+          <text x="35" y="54" font-family="JetBrains Mono" font-size="9" fill="#fff">A</text>
+          <text x="115" y="54" font-family="JetBrains Mono" font-size="9" fill="#ff6b9d">B</text>
+        </svg>
+        <p class="venn-caption">All of A</p>
+      </div>
+      <div style="flex:1; min-width:200px;">
+        <p style="margin:0; font-size:14px; color:#a0a0c0;">All 5 employees appear. Eve has no matching department, so department columns are NULL. HR is still excluded (it's on the right side with no match).</p>
+      </div>
+    </div>
+
+    <p class="code-label">SQL Query</p>
+    <div class="code-block"><pre><span class="kw">SELECT</span>
+  e.id,
+  e.name        <span class="kw">AS</span> employee,
+  d.name        <span class="kw">AS</span> department,
+  d.location
+<span class="kw">FROM</span>   <span class="tbl">employees</span> e
+<span class="kw">LEFT JOIN</span> <span class="tbl">departments</span> d
+  <span class="kw">ON</span> e.dept_id <span class="op">=</span> d.id
+<span class="kw">ORDER BY</span> e.id;</pre></div>
+
+    <div class="result-wrap">
+      <p class="result-label">⟶ Result Set (5 rows)</p>
+      <div class="data-table-wrap">
+        <table>
+          <thead><tr><th>id</th><th>employee</th><th>department</th><th>location</th></tr></thead>
+          <tbody>
+            <tr class="row-match"><td>1</td><td>Alice</td><td>Engineering</td><td>NYC</td></tr>
+            <tr class="row-match"><td>2</td><td>Bob</td><td>Marketing</td><td>LA</td></tr>
+            <tr class="row-match"><td>3</td><td>Carol</td><td>Engineering</td><td>NYC</td></tr>
+            <tr class="row-match"><td>4</td><td>Dave</td><td>Sales</td><td>Chicago</td></tr>
+            <tr class="row-left-only"><td>5</td><td>Eve</td><td class="null-v">NULL</td><td class="null-v">NULL</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <h3>Finding unmatched rows</h3>
+    <p>A very common pattern: use LEFT JOIN + WHERE IS NULL to find orphaned records.</p>
+    <div class="code-block"><pre><span class="cmt">-- Find employees with no department assigned</span>
+<span class="kw">SELECT</span> e.id, e.name
+<span class="kw">FROM</span>   <span class="tbl">employees</span> e
+<span class="kw">LEFT JOIN</span> <span class="tbl">departments</span> d <span class="kw">ON</span> e.dept_id <span class="op">=</span> d.id
+<span class="kw">WHERE</span>  d.id <span class="kw">IS NULL</span>;</pre></div>
+    <div class="data-table-wrap" style="margin-top:10px">
+      <table>
+        <thead><tr><th>id</th><th>name</th></tr></thead>
+        <tbody><tr><td>5</td><td>Eve</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ RIGHT JOIN ═══════════════════════════ -->
+<section class="section" id="right">
+  <h2>RIGHT JOIN</h2>
+
+  <div class="join-card card-right">
+    <div class="card-title">All rows from the right table, matched rows from the left</div>
+    <div class="card-desc">The mirror of LEFT JOIN. Every row in the right (second) table is kept. Right JOINs are rare in practice — most developers flip the table order and use a LEFT JOIN instead.</div>
+
+    <div class="venn-row">
+      <div class="venn-wrap">
+        <svg width="160" height="100" viewBox="0 0 160 100">
+          <circle cx="55" cy="50" r="40" fill="rgba(91,141,255,.08)" stroke="#5b8dff" stroke-width="2"/>
+          <circle cx="105" cy="50" r="40" fill="rgba(255,107,157,.55)" stroke="#ff6b9d" stroke-width="2"/>
+          <clipPath id="clip-right-l"><circle cx="55" cy="50" r="40"/></clipPath>
+          <circle cx="105" cy="50" r="40" fill="rgba(255,107,157,.55)" clip-path="url(#clip-right-l)"/>
+          <text x="35" y="54" font-family="JetBrains Mono" font-size="9" fill="#5b8dff">A</text>
+          <text x="115" y="54" font-family="JetBrains Mono" font-size="9" fill="#fff">B</text>
+        </svg>
+        <p class="venn-caption">All of B</p>
+      </div>
+      <div style="flex:1; min-width:200px;">
+        <p style="margin:0; font-size:14px; color:#a0a0c0;">All 4 departments appear. HR has no employees, so employee columns show NULL. Eve (no dept) is excluded because she has no matching department row.</p>
+      </div>
+    </div>
+
+    <p class="code-label">SQL Query</p>
+    <div class="code-block"><pre><span class="kw">SELECT</span>
+  d.id          <span class="kw">AS</span> dept_id,
+  d.name        <span class="kw">AS</span> department,
+  e.name        <span class="kw">AS</span> employee
+<span class="kw">FROM</span>   <span class="tbl">employees</span> e
+<span class="kw">RIGHT JOIN</span> <span class="tbl">departments</span> d
+  <span class="kw">ON</span> e.dept_id <span class="op">=</span> d.id
+<span class="kw">ORDER BY</span> d.id;</pre></div>
+
+    <div class="result-wrap">
+      <p class="result-label">⟶ Result Set (5 rows)</p>
+      <div class="data-table-wrap">
+        <table>
+          <thead><tr><th>dept_id</th><th>department</th><th>employee</th></tr></thead>
+          <tbody>
+            <tr class="row-match"><td>10</td><td>Engineering</td><td>Alice</td></tr>
+            <tr class="row-match"><td>10</td><td>Engineering</td><td>Carol</td></tr>
+            <tr class="row-match"><td>20</td><td>Marketing</td><td>Bob</td></tr>
+            <tr class="row-match"><td>30</td><td>Sales</td><td>Dave</td></tr>
+            <tr class="row-right-only"><td>40</td><td>HR</td><td class="null-v">NULL</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tip-box"><strong>Tip:</strong> <code>A RIGHT JOIN B</code> is always equivalent to <code>B LEFT JOIN A</code>. Prefer LEFT JOIN for consistency — most style guides ban RIGHT JOIN entirely.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ FULL OUTER ═══════════════════════════ -->
+<section class="section" id="full">
+  <h2>FULL OUTER JOIN</h2>
+
+  <div class="join-card card-full">
+    <div class="card-title">All rows from both tables, NULLs where no match</div>
+    <div class="card-desc">The union of LEFT JOIN and RIGHT JOIN. Every row from both tables appears — matched rows are combined, unmatched rows get NULLs on the missing side. Not supported in MySQL (use UNION workaround).</div>
+
+    <div class="venn-row">
+      <div class="venn-wrap">
+        <svg width="160" height="100" viewBox="0 0 160 100">
+          <circle cx="55" cy="50" r="40" fill="rgba(91,141,255,.45)" stroke="#5b8dff" stroke-width="2"/>
+          <circle cx="105" cy="50" r="40" fill="rgba(255,107,157,.45)" stroke="#ff6b9d" stroke-width="2"/>
+          <clipPath id="clip-full-r"><circle cx="105" cy="50" r="40"/></clipPath>
+          <circle cx="55" cy="50" r="40" fill="rgba(168,85,247,.6)" clip-path="url(#clip-full-r)"/>
+          <text x="35" y="54" font-family="JetBrains Mono" font-size="9" fill="#fff">A</text>
+          <text x="115" y="54" font-family="JetBrains Mono" font-size="9" fill="#fff">B</text>
+        </svg>
+        <p class="venn-caption">A ∪ B</p>
+      </div>
+      <div style="flex:1; min-width:200px;">
+        <p style="margin:0; font-size:14px; color:#a0a0c0;">Both Eve (no dept) and HR (no employees) appear, each with NULLs on the unmatched side. Zero data is lost.</p>
+      </div>
+    </div>
+
+    <p class="code-label">SQL Query (PostgreSQL / SQL Server / SQLite)</p>
+    <div class="code-block"><pre><span class="kw">SELECT</span>
+  e.name  <span class="kw">AS</span> employee,
+  d.name  <span class="kw">AS</span> department
+<span class="kw">FROM</span>   <span class="tbl">employees</span> e
+<span class="kw">FULL OUTER JOIN</span> <span class="tbl">departments</span> d
+  <span class="kw">ON</span> e.dept_id <span class="op">=</span> d.id
+<span class="kw">ORDER BY</span> e.id;</pre></div>
+
+    <p class="code-label">MySQL Workaround (UNION)</p>
+    <div class="code-block"><pre><span class="cmt">-- MySQL doesn't support FULL OUTER JOIN natively</span>
+<span class="kw">SELECT</span> e.name <span class="kw">AS</span> employee, d.name <span class="kw">AS</span> department
+<span class="kw">FROM</span> <span class="tbl">employees</span> e <span class="kw">LEFT JOIN</span> <span class="tbl">departments</span> d <span class="kw">ON</span> e.dept_id <span class="op">=</span> d.id
+<span class="kw">UNION</span>
+<span class="kw">SELECT</span> e.name, d.name
+<span class="kw">FROM</span> <span class="tbl">employees</span> e <span class="kw">RIGHT JOIN</span> <span class="tbl">departments</span> d <span class="kw">ON</span> e.dept_id <span class="op">=</span> d.id;</pre></div>
+
+    <div class="result-wrap">
+      <p class="result-label">⟶ Result Set (6 rows)</p>
+      <div class="data-table-wrap">
+        <table>
+          <thead><tr><th>employee</th><th>department</th></tr></thead>
+          <tbody>
+            <tr class="row-match"><td>Alice</td><td>Engineering</td></tr>
+            <tr class="row-match"><td>Bob</td><td>Marketing</td></tr>
+            <tr class="row-match"><td>Carol</td><td>Engineering</td></tr>
+            <tr class="row-match"><td>Dave</td><td>Sales</td></tr>
+            <tr class="row-left-only"><td>Eve</td><td class="null-v">NULL</td></tr>
+            <tr class="row-right-only"><td class="null-v">NULL</td><td>HR</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ CROSS JOIN ═══════════════════════════ -->
+<section class="section" id="cross">
+  <h2>CROSS JOIN</h2>
+
+  <div class="join-card card-cross">
+    <div class="card-title">Every row from A paired with every row from B</div>
+    <div class="card-desc">Produces the Cartesian product — no join condition is needed or used. 5 employees × 4 departments = 20 rows. Use carefully; on large tables this can be explosive.</div>
+
+    <p class="code-label">SQL Query</p>
+    <div class="code-block"><pre><span class="kw">SELECT</span>
+  e.name  <span class="kw">AS</span> employee,
+  d.name  <span class="kw">AS</span> department
+<span class="kw">FROM</span>   <span class="tbl">employees</span> e
+<span class="kw">CROSS JOIN</span> <span class="tbl">departments</span> d
+<span class="kw">ORDER BY</span> e.id, d.id;</pre></div>
+
+    <div class="result-wrap">
+      <p class="result-label">⟶ Result Set (20 rows — first 8 shown)</p>
+      <div class="data-table-wrap">
+        <table>
+          <thead><tr><th>employee</th><th>department</th></tr></thead>
+          <tbody>
+            <tr><td>Alice</td><td>Engineering</td></tr>
+            <tr><td>Alice</td><td>Marketing</td></tr>
+            <tr><td>Alice</td><td>Sales</td></tr>
+            <tr><td>Alice</td><td>HR</td></tr>
+            <tr><td>Bob</td><td>Engineering</td></tr>
+            <tr><td>Bob</td><td>Marketing</td></tr>
+            <tr><td>Bob</td><td>Sales</td></tr>
+            <tr><td>Bob</td><td>HR</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <h3>Real-world use: generating combinations</h3>
+    <div class="code-block"><pre><span class="cmt">-- Generate all possible size × color product SKUs</span>
+<span class="kw">SELECT</span>
+  s.size_name,
+  c.color_name,
+  <span class="fn-c">CONCAT</span>(s.size_code, <span class="str">'-'</span>, c.color_code) <span class="kw">AS</span> sku
+<span class="kw">FROM</span>   <span class="tbl">sizes</span>  s
+<span class="kw">CROSS JOIN</span> <span class="tbl">colors</span> c;</pre></div>
+
+    <div class="warn-box"><strong>Warning:</strong> Never accidentally write a cross join by forgetting the ON clause in an older-style comma join (<code>FROM A, B</code>). Always use explicit JOIN syntax.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ SELF JOIN ════════════════════════════ -->
+<section class="section" id="self">
+  <h2>SELF JOIN</h2>
+
+  <div class="join-card card-self">
+    <div class="card-title">A table joined to itself using aliases</div>
+    <div class="card-desc">Not a separate SQL keyword — it's any join where both sides reference the same table. Essential for hierarchical data like org charts, bill-of-materials, or friend networks.</div>
+
+    <p>For this example we use an <strong>employees</strong> table with a <code>manager_id</code> column:</p>
+
+    <div class="data-table-wrap" style="margin: 20px 0; max-width: 480px;">
+      <div class="tbl-header">📋 employees (with manager_id)</div>
+      <table>
+        <thead><tr><th>id</th><th>name</th><th>manager_id</th></tr></thead>
+        <tbody>
+          <tr><td class="pk">1</td><td>Alice (CEO)</td><td class="null-v">NULL</td></tr>
+          <tr><td class="pk">2</td><td>Bob</td><td class="fk">1</td></tr>
+          <tr><td class="pk">3</td><td>Carol</td><td class="fk">1</td></tr>
+          <tr><td class="pk">4</td><td>Dave</td><td class="fk">2</td></tr>
+          <tr><td class="pk">5</td><td>Eve</td><td class="fk">2</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="code-label">SQL Query</p>
+    <div class="code-block"><pre><span class="kw">SELECT</span>
+  emp.name    <span class="kw">AS</span> employee,
+  mgr.name    <span class="kw">AS</span> manager
+<span class="kw">FROM</span>   <span class="tbl">employees</span> emp
+<span class="kw">LEFT JOIN</span> <span class="tbl">employees</span> mgr
+  <span class="kw">ON</span> emp.manager_id <span class="op">=</span> mgr.id
+<span class="kw">ORDER BY</span> mgr.name <span class="kw">NULLS FIRST</span>;</pre></div>
+
+    <div class="result-wrap">
+      <p class="result-label">⟶ Result Set (5 rows)</p>
+      <div class="data-table-wrap">
+        <table>
+          <thead><tr><th>employee</th><th>manager</th></tr></thead>
+          <tbody>
+            <tr><td>Alice</td><td class="null-v">NULL</td></tr>
+            <tr><td>Bob</td><td>Alice</td></tr>
+            <tr><td>Carol</td><td>Alice</td></tr>
+            <tr><td>Dave</td><td>Bob</td></tr>
+            <tr><td>Eve</td><td>Bob</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ COMPARISON TABLE ════════════════════ -->
+<section class="section" id="compare">
+  <p class="section-label">03 — Summary</p>
+  <h2>Join Comparison</h2>
+  <p>A quick reference for choosing the right join type.</p>
+
+  <div class="compare-wrap">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Join Type</th>
+          <th>Left Unmatched?</th>
+          <th>Right Unmatched?</th>
+          <th>Rows in Result</th>
+          <th>Use When…</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="join-badge badge-inner">INNER JOIN</span></td>
+          <td><span class="cross-x">✗ Excluded</span></td>
+          <td><span class="cross-x">✗ Excluded</span></td>
+          <td>≤ min(|A|, |B|)</td>
+          <td>You only want rows with data on both sides</td>
+        </tr>
+        <tr>
+          <td><span class="join-badge badge-left">LEFT JOIN</span></td>
+          <td><span class="check">✓ Kept (NULLs)</span></td>
+          <td><span class="cross-x">✗ Excluded</span></td>
+          <td>≥ |A|</td>
+          <td>You need all left rows + optional right data</td>
+        </tr>
+        <tr>
+          <td><span class="join-badge badge-right">RIGHT JOIN</span></td>
+          <td><span class="cross-x">✗ Excluded</span></td>
+          <td><span class="check">✓ Kept (NULLs)</span></td>
+          <td>≥ |B|</td>
+          <td>You need all right rows + optional left data</td>
+        </tr>
+        <tr>
+          <td><span class="join-badge badge-full">FULL OUTER JOIN</span></td>
+          <td><span class="check">✓ Kept (NULLs)</span></td>
+          <td><span class="check">✓ Kept (NULLs)</span></td>
+          <td>≥ max(|A|, |B|)</td>
+          <td>You can't afford to lose any rows from either side</td>
+        </tr>
+        <tr>
+          <td><span class="join-badge badge-cross">CROSS JOIN</span></td>
+          <td><span class="check">✓ All pairs</span></td>
+          <td><span class="check">✓ All pairs</span></td>
+          <td>|A| × |B|</td>
+          <td>Generating all combinations (sizes, dates, SKUs…)</td>
+        </tr>
+        <tr>
+          <td><span class="join-badge badge-self">SELF JOIN</span></td>
+          <td colspan="2" style="text-align:center; color: var(--muted);">Depends on join type used</td>
+          <td>Varies</td>
+          <td>Hierarchical/recursive data in one table</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ PERFORMANCE ══════════════════════════ -->
+<section class="section" id="perf">
+  <p class="section-label">04 — Performance</p>
+  <h2>Performance Tips</h2>
+  <p>Joins are where most slow queries hide. These practices dramatically reduce execution time.</p>
+
+  <div class="tips-grid">
+    <div class="tip-card">
+      <div class="tip-num">01</div>
+      <h4>Index your join columns</h4>
+      <p>Always index foreign keys. Without an index, the DB scans every row for each match (O(n²) nightmare).</p>
+    </div>
+    <div class="tip-card">
+      <div class="tip-num">02</div>
+      <h4>Filter early with WHERE</h4>
+      <p>Apply WHERE conditions before the join using subqueries or CTEs to reduce the working set first.</p>
+    </div>
+    <div class="tip-card">
+      <div class="tip-num">03</div>
+      <h4>SELECT only needed columns</h4>
+      <p>Avoid <code>SELECT *</code> across joins — fetch only the columns you need to minimize data movement.</p>
+    </div>
+    <div class="tip-card">
+      <div class="tip-num">04</div>
+      <h4>Use EXPLAIN / EXPLAIN ANALYZE</h4>
+      <p>Always examine the query plan. Look for Seq Scans on large tables — those are index opportunities.</p>
+    </div>
+    <div class="tip-card">
+      <div class="tip-num">05</div>
+      <h4>Watch out for fan-out</h4>
+      <p>Joining on a non-unique column multiplies rows. Aggregate first, then join to avoid inflated result sets.</p>
+    </div>
+    <div class="tip-card">
+      <div class="tip-num">06</div>
+      <h4>Prefer INNER over OUTER when possible</h4>
+      <p>INNER JOINs are easier to optimize. Use OUTER only when you genuinely need unmatched rows.</p>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 40px;">Indexing Example</h3>
+  <div class="code-block"><pre><span class="cmt">-- Create index on the foreign key BEFORE running heavy joins</span>
+<span class="kw">CREATE INDEX</span> idx_employees_dept_id
+  <span class="kw">ON</span> <span class="tbl">employees</span>(dept_id);
+
+<span class="cmt">-- Check the query plan</span>
+<span class="kw">EXPLAIN ANALYZE</span>
+<span class="kw">SELECT</span> e.name, d.name
+<span class="kw">FROM</span>  <span class="tbl">employees</span> e
+<span class="kw">JOIN</span>  <span class="tbl">departments</span> d <span class="kw">ON</span> e.dept_id <span class="op">=</span> d.id;
+<span class="cmt">-- Look for "Index Scan" instead of "Seq Scan"</span></pre></div>
+
+  <div class="tip-box" style="margin-top: 32px;"><strong>Golden rule:</strong> Any column that appears in an ON clause or a WHERE clause on a large table should be indexed. Start there and use EXPLAIN to verify the optimizer picked it up.</div>
+</section>
+
+<footer>SQL Joins Deep Dive &nbsp;·&nbsp; All join types covered: INNER · LEFT · RIGHT · FULL OUTER · CROSS · SELF</footer>
+
+</body>
+</html>

@@ -1,0 +1,2026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OOP Pillars — 4-Day University Course</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@300;400;500;600&display=swap');
+
+:root {
+  --ink: #0f0f0f;
+  --paper: #faf8f3;
+  --cream: #f2ede2;
+  --rule: #d4c9b0;
+  --accent1: #1a3a5c;   /* deep navy — Encapsulation */
+  --accent2: #2d6a2d;   /* forest green — Abstraction */
+  --accent3: #7a1f1f;   /* dark red — Inheritance */
+  --accent4: #4a2070;   /* deep violet — Polymorphism */
+  --gold: #b8860b;
+  --type-display: 'Playfair Display', serif;
+  --type-body: 'Inter', sans-serif;
+  --type-code: 'IBM Plex Mono', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--type-body);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+/* ── TOP MASTHEAD ── */
+.masthead {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 48px 48px 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.masthead::before {
+  content: 'OOP';
+  position: absolute;
+  right: -20px;
+  top: -30px;
+  font-family: var(--type-display);
+  font-size: 220px;
+  font-weight: 900;
+  color: rgba(255,255,255,0.03);
+  pointer-events: none;
+  line-height: 1;
+  user-select: none;
+}
+
+.masthead-meta {
+  font-family: var(--type-code);
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--gold);
+  margin-bottom: 16px;
+  text-transform: uppercase;
+}
+
+.masthead h1 {
+  font-family: var(--type-display);
+  font-size: clamp(32px, 5vw, 64px);
+  font-weight: 900;
+  line-height: 1.05;
+  margin-bottom: 20px;
+  max-width: 700px;
+}
+
+.masthead-sub {
+  font-size: 15px;
+  color: rgba(250,248,243,0.6);
+  font-weight: 300;
+  max-width: 560px;
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.course-stats {
+  display: flex;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-num {
+  font-family: var(--type-display);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1;
+}
+
+.stat-label {
+  font-family: var(--type-code);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: rgba(250,248,243,0.5);
+  text-transform: uppercase;
+}
+
+/* ── PILLAR TABS ── */
+.pillar-nav {
+  background: var(--ink);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  overflow-x: auto;
+}
+
+.pillar-tab {
+  flex: 1;
+  min-width: 160px;
+  padding: 20px 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+  border: none;
+  background: none;
+  color: rgba(250,248,243,0.4);
+  font-family: var(--type-body);
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-bottom: 3px solid transparent;
+  text-align: left;
+}
+
+.pillar-tab:hover { color: rgba(250,248,243,0.7); background: rgba(255,255,255,0.03); }
+.pillar-tab.active { color: var(--paper); border-bottom-color: var(--tab-color, var(--gold)); }
+
+.tab-day {
+  font-family: var(--type-code);
+  font-size: 10px;
+  letter-spacing: 2px;
+  opacity: 0.5;
+  text-transform: uppercase;
+}
+
+.tab-title { font-weight: 600; font-size: 14px; }
+
+.tab-pill {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tab-color, var(--gold));
+}
+
+/* ── CONTENT AREA ── */
+.content-area {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 48px 32px;
+}
+
+.day-panel { display: none; }
+.day-panel.active { display: block; animation: fadeUp 0.4s ease; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── DAY HEADER ── */
+.day-header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 24px;
+  align-items: start;
+  margin-bottom: 40px;
+  padding-bottom: 32px;
+  border-bottom: 2px solid var(--rule);
+}
+
+.day-pillar {
+  font-family: var(--type-code);
+  font-size: 11px;
+  letter-spacing: 3px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.day-title {
+  font-family: var(--type-display);
+  font-size: clamp(28px, 4vw, 48px);
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 12px;
+}
+
+.day-tagline {
+  font-size: 15px;
+  color: #555;
+  font-weight: 300;
+  max-width: 500px;
+  line-height: 1.6;
+}
+
+.day-meta-box {
+  background: var(--cream);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 20px 24px;
+  min-width: 200px;
+}
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 13px;
+}
+
+.meta-row:last-child { border-bottom: none; }
+.meta-key { color: #777; font-weight: 500; }
+.meta-val { font-family: var(--type-code); font-size: 12px; font-weight: 600; }
+
+/* ── OBJECTIVES ── */
+.objectives {
+  background: var(--cream);
+  border-left: 4px solid;
+  padding: 24px 28px;
+  border-radius: 0 4px 4px 0;
+  margin-bottom: 36px;
+}
+
+.obj-title {
+  font-family: var(--type-code);
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  opacity: 0.6;
+}
+
+.obj-list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 8px 24px;
+}
+
+.obj-list li {
+  display: flex;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.obj-list li::before {
+  content: '→';
+  font-family: var(--type-code);
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+/* ── SEGMENTS ── */
+.segments { display: flex; flex-direction: column; gap: 28px; }
+
+.segment {
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.seg-header {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  gap: 16px;
+  align-items: center;
+  padding: 16px 20px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--rule);
+  transition: background 0.15s;
+  user-select: none;
+}
+
+.seg-header:hover { background: var(--cream); }
+
+.seg-time {
+  font-family: var(--type-code);
+  font-size: 11px;
+  color: #888;
+  background: var(--cream);
+  padding: 4px 8px;
+  border-radius: 3px;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.seg-info { display: flex; flex-direction: column; gap: 3px; }
+
+.seg-type {
+  font-family: var(--type-code);
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  opacity: 0.5;
+}
+
+.seg-title { font-size: 15px; font-weight: 600; }
+
+.seg-toggle {
+  font-size: 18px;
+  color: #aaa;
+  transition: transform 0.25s;
+  font-family: var(--type-code);
+  line-height: 1;
+}
+
+.segment.open .seg-toggle { transform: rotate(180deg); }
+
+.seg-body {
+  display: none;
+  padding: 24px;
+}
+
+.segment.open .seg-body { display: block; animation: fadeUp 0.3s ease; }
+
+/* Content blocks inside segments */
+.block { margin-bottom: 24px; }
+.block:last-child { margin-bottom: 0; }
+
+.block-label {
+  font-family: var(--type-code);
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.block-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+/* Analogy box */
+.analogy {
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+  border: 1px solid #fbbf24;
+  border-radius: 4px;
+  padding: 18px 20px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.analogy strong { color: #92400e; }
+
+/* Code block */
+.code-wrap {
+  background: #1e1e2e;
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+
+.code-header {
+  background: #2a2a3e;
+  padding: 8px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.code-lang {
+  font-family: var(--type-code);
+  font-size: 11px;
+  color: #a0a0c0;
+  letter-spacing: 1px;
+}
+
+.code-dots { display: flex; gap: 6px; }
+.code-dots span { width: 10px; height: 10px; border-radius: 50%; }
+.code-dots .r { background: #ff5f57; }
+.code-dots .y { background: #febc2e; }
+.code-dots .g { background: #28c840; }
+
+pre {
+  padding: 20px;
+  overflow-x: auto;
+  font-family: var(--type-code);
+  font-size: 13px;
+  line-height: 1.8;
+  color: #cdd6f4;
+  margin: 0;
+}
+
+.kw  { color: #cba6f7; }
+.cls { color: #89b4fa; }
+.fn  { color: #a6e3a1; }
+.str { color: #a6e3a1; }
+.cmt { color: #585b70; font-style: italic; }
+.num { color: #fab387; }
+.prop{ color: #89dceb; }
+.ret { color: #f38ba8; }
+
+/* Teaching tips */
+.tips {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.tip {
+  background: var(--cream);
+  border-radius: 4px;
+  padding: 14px 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  border-left: 3px solid;
+}
+
+.tip-icon { font-size: 16px; margin-bottom: 6px; display: block; }
+
+/* Exercise */
+.exercise {
+  border: 2px dashed var(--rule);
+  border-radius: 4px;
+  padding: 20px;
+}
+
+.ex-steps { list-style: decimal; padding-left: 20px; }
+.ex-steps li { font-size: 14px; padding: 4px 0; line-height: 1.6; }
+
+/* Discussion prompts */
+.prompts { display: flex; flex-direction: column; gap: 8px; }
+
+.prompt {
+  display: flex;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--cream);
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.5;
+  align-items: flex-start;
+}
+
+.prompt-q {
+  font-family: var(--type-code);
+  font-size: 10px;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 2px 6px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Assessment */
+.assessment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.assess-card {
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 16px;
+  background: var(--cream);
+}
+
+.assess-type {
+  font-family: var(--type-code);
+  font-size: 10px;
+  letter-spacing: 2px;
+  opacity: 0.5;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.assess-text { font-size: 13px; line-height: 1.5; font-weight: 500; }
+
+/* Key concept cards */
+.concept-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.concept-card {
+  padding: 16px;
+  border-radius: 4px;
+  border: 1px solid;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.concept-name {
+  font-family: var(--type-code);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+/* Timeline strip */
+.timeline-strip {
+  display: flex;
+  gap: 0;
+  margin-bottom: 36px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.tl-block {
+  flex: 1;
+  padding: 10px 12px;
+  text-align: center;
+  border-right: 1px solid var(--rule);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.tl-block:last-child { border-right: none; }
+
+.tl-block.break {
+  background: var(--cream);
+  color: #999;
+  font-family: var(--type-code);
+  font-size: 10px;
+  flex: 0 0 60px;
+}
+
+.tl-time {
+  font-family: var(--type-code);
+  font-size: 9px;
+  opacity: 0.5;
+  margin-bottom: 4px;
+}
+
+.tl-name { font-weight: 600; font-size: 12px; }
+
+/* Summary section */
+.day-summary {
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 4px;
+  padding: 28px;
+  margin-top: 36px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 600px) { .day-summary { grid-template-columns: 1fr; } }
+
+.summary-col-title {
+  font-family: var(--type-code);
+  font-size: 10px;
+  letter-spacing: 2px;
+  opacity: 0.4;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.summary-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.summary-list li {
+  font-size: 13px;
+  padding-left: 16px;
+  position: relative;
+  color: rgba(250,248,243,0.75);
+  line-height: 1.5;
+}
+
+.summary-list li::before {
+  content: '·';
+  position: absolute;
+  left: 0;
+  color: var(--gold);
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+/* Breadcrumb / progress */
+.progress-bar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 32px;
+}
+
+.prog-seg {
+  height: 4px;
+  flex: 1;
+  border-radius: 2px;
+  background: var(--rule);
+  transition: background 0.3s;
+}
+
+.prog-seg.done { background: var(--day-color); }
+
+/* Footer */
+.footer {
+  background: var(--ink);
+  color: rgba(250,248,243,0.3);
+  text-align: center;
+  padding: 24px;
+  font-family: var(--type-code);
+  font-size: 11px;
+  letter-spacing: 1px;
+  margin-top: 64px;
+}
+
+/* Print toggle for professor */
+.print-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: none;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  font-family: var(--type-code);
+  font-size: 12px;
+  cursor: pointer;
+  color: #555;
+  transition: all 0.2s;
+  margin-bottom: 32px;
+}
+
+.print-btn:hover { border-color: var(--ink); color: var(--ink); background: var(--cream); }
+
+/* expand-all */
+.expand-all-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--cream);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  font-family: var(--type-code);
+  font-size: 11px;
+  cursor: pointer;
+  color: #555;
+  transition: all 0.2s;
+  margin-bottom: 24px;
+  letter-spacing: 1px;
+}
+
+.expand-all-btn:hover { background: var(--paper); }
+</style>
+</head>
+<body>
+
+<!-- MASTHEAD -->
+<div class="masthead">
+  <div class="masthead-meta">University Lecture Series · Computer Science · OOP</div>
+  <h1>Object-Oriented<br>Programming Pillars</h1>
+  <p class="masthead-sub">A four-day immersive lecture course covering the four foundational pillars of OOP — with analogies, live-coded examples, class exercises, and discussion prompts designed for deep conceptual understanding.</p>
+  <div class="course-stats">
+    <div class="stat"><div class="stat-num">4</div><div class="stat-label">Days</div></div>
+    <div class="stat"><div class="stat-num">8</div><div class="stat-label">Hours Total</div></div>
+    <div class="stat"><div class="stat-num">4</div><div class="stat-label">Pillars</div></div>
+    <div class="stat"><div class="stat-num">20+</div><div class="stat-label">Exercises</div></div>
+  </div>
+</div>
+
+<!-- PILLAR NAVIGATION -->
+<div class="pillar-nav">
+  <button class="pillar-tab active" style="--tab-color:#1a3a5c" onclick="switchDay(0)">
+    <span class="tab-day">Day 1</span>
+    <span class="tab-title">Encapsulation</span>
+    <span class="tab-pill" style="--tab-color:#4a90d9"></span>
+  </button>
+  <button class="pillar-tab" style="--tab-color:#2d6a2d" onclick="switchDay(1)">
+    <span class="tab-day">Day 2</span>
+    <span class="tab-title">Abstraction</span>
+    <span class="tab-pill" style="--tab-color:#4caf50"></span>
+  </button>
+  <button class="pillar-tab" style="--tab-color:#7a1f1f" onclick="switchDay(2)">
+    <span class="tab-day">Day 3</span>
+    <span class="tab-title">Inheritance</span>
+    <span class="tab-pill" style="--tab-color:#e05c5c"></span>
+  </button>
+  <button class="pillar-tab" style="--tab-color:#4a2070" onclick="switchDay(3)">
+    <span class="tab-day">Day 4</span>
+    <span class="tab-title">Polymorphism</span>
+    <span class="tab-pill" style="--tab-color:#9c6dd8"></span>
+  </button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- DAY 1: ENCAPSULATION -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="content-area">
+<div id="day-0" class="day-panel active">
+
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:24px">
+    <button class="expand-all-btn" onclick="expandAll(0)">▸ Expand All Segments</button>
+    <button class="print-btn" onclick="window.print()">⎙ Print This Day's Notes</button>
+  </div>
+
+  <!-- Day 1 timeline -->
+  <div class="timeline-strip">
+    <div class="tl-block" style="background:rgba(26,58,92,0.07)"><div class="tl-time">0:00</div><div class="tl-name">Intro & Context</div></div>
+    <div class="tl-block" style="background:rgba(26,58,92,0.07)"><div class="tl-time">0:20</div><div class="tl-name">Core Theory</div></div>
+    <div class="tl-block" style="background:rgba(26,58,92,0.07)"><div class="tl-time">0:50</div><div class="tl-name">Live Coding</div></div>
+    <div class="tl-block break">☕ 10 min</div>
+    <div class="tl-block" style="background:rgba(26,58,92,0.07)"><div class="tl-time">1:10</div><div class="tl-name">Design Patterns</div></div>
+    <div class="tl-block" style="background:rgba(26,58,92,0.07)"><div class="tl-time">1:30</div><div class="tl-name">Lab Exercise</div></div>
+    <div class="tl-block" style="background:rgba(26,58,92,0.07)"><div class="tl-time">1:45</div><div class="tl-name">Debrief & Q&A</div></div>
+  </div>
+
+  <div class="day-header">
+    <div>
+      <div class="day-pillar" style="color:#1a3a5c">Pillar I · Day 1 of 4</div>
+      <div class="day-title">Encapsulation</div>
+      <div class="day-tagline">Bundling data and the methods that operate on it. Hiding internal state. Exposing only what needs to be exposed.</div>
+    </div>
+    <div class="day-meta-box">
+      <div class="meta-row"><span class="meta-key">Duration</span><span class="meta-val">2 hrs</span></div>
+      <div class="meta-row"><span class="meta-key">Level</span><span class="meta-val">Intro → Intermediate</span></div>
+      <div class="meta-row"><span class="meta-key">Language</span><span class="meta-val">Python / Java</span></div>
+      <div class="meta-row"><span class="meta-key">Lab</span><span class="meta-val">30 min coding</span></div>
+    </div>
+  </div>
+
+  <div class="objectives" style="border-color:#1a3a5c">
+    <div class="obj-title">Learning Objectives — By end of class, students will be able to…</div>
+    <ul class="obj-list">
+      <li>Define encapsulation and distinguish it from abstraction</li>
+      <li>Apply access modifiers (public / private / protected)</li>
+      <li>Design a class with proper getter / setter methods</li>
+      <li>Explain why direct attribute access is dangerous</li>
+      <li>Identify encapsulation violations in existing code</li>
+      <li>Implement a complete encapsulated class from scratch</li>
+    </ul>
+  </div>
+
+  <div class="segments">
+
+    <!-- SEGMENT 1 -->
+    <div class="segment open">
+      <div class="seg-header" onclick="toggleSeg(this)">
+        <div class="seg-time">0:00<br>→ 0:20</div>
+        <div class="seg-info">
+          <span class="seg-type">Opening · 20 min</span>
+          <span class="seg-title">The Problem with "Open" Data</span>
+        </div>
+        <span class="seg-toggle">▼</span>
+      </div>
+      <div class="seg-body">
+        <div class="block">
+          <div class="block-label">📖 Analogy — Lead with this</div>
+          <div class="analogy">
+            <strong>The ATM Machine:</strong> When you use an ATM, you don't reach into its vault and grab money yourself. You interact through a controlled interface — PIN pad, screen, card slot. The machine's internal logic (balance checking, dispensing mechanism, transaction logging) is hidden from you. You get exactly what you need and nothing more. <em>This is encapsulation.</em><br><br>
+            Now ask the class: "What would happen if anyone could walk up and directly change the balance variable inside the bank's database?"
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-label">💥 Counter-example — Show the problem first</div>
+          <div class="code-wrap">
+            <div class="code-header">
+              <span class="code-lang">PYTHON — Bad Code (No Encapsulation)</span>
+              <div class="code-dots"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+            </div>
+            <pre><span class="cmt"># ❌ Dangerous — anyone can corrupt data directly</span>
+<span class="kw">class</span> <span class="cls">BankAccount</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="prop">self</span>, owner, balance):
+        <span class="prop">self</span>.owner   = owner
+        <span class="prop">self</span>.balance = balance   <span class="cmt"># PUBLIC — anyone can write to this!</span>
+
+account = <span class="cls">BankAccount</span>(<span class="str">"Alice"</span>, <span class="num">1000</span>)
+
+<span class="cmt"># Anyone can do this — no validation, no audit trail</span>
+account.balance = <span class="num">-999999</span>   <span class="cmt"># 💀 silent corruption</span>
+account.balance = <span class="str">"hacked"</span>  <span class="cmt"># 💀 wrong type, crashes later</span>
+account.owner   = <span class="kw">None</span>      <span class="cmt"># 💀 who owns this now?</span></pre>
+          </div>
+          <div class="tips">
+            <div class="tip" style="border-color:#1a3a5c">
+              <span class="tip-icon">🎯</span>
+              <strong>Teaching move:</strong> Run this code live. Show the balance becoming negative. Ask "Is this account still valid?" Let students feel the problem before showing the fix.
+            </div>
+            <div class="tip" style="border-color:#b8860b">
+              <span class="tip-icon">💬</span>
+              <strong>Ask the class:</strong> "Have you ever seen a bug caused by some other part of a program changing data it shouldn't?" — builds personal connection.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEGMENT 2 -->
+    <div class="segment">
+      <div class="seg-header" onclick="toggleSeg(this)">
+        <div class="seg-time">0:20<br>→ 0:50</div>
+        <div class="seg-info">
+          <span class="seg-type">Core Theory · 30 min</span>
+          <span class="seg-title">Access Modifiers, Getters & Setters, Data Hiding</span>
+        </div>
+        <span class="seg-toggle">▼</span>
+      </div>
+      <div class="seg-body">
+        <div class="block">
+          <div class="block-label">🧠 Core Concepts</div>
+          <div class="concept-cards">
+            <div class="concept-card" style="border-color:#1a3a5c; background:rgba(26,58,92,0.05)">
+              <div class="concept-name" style="color:#1a3a5c">private</div>
+              Accessible only within the class itself. The strongest protection. Use for internal state.
+            </div>
+            <div class="concept-card" style="border-color:#b8860b; background:#fffbeb">
+              <div class="concept-name" style="color:#b8860b">protected</div>
+              Accessible within class and subclasses. Convention: <code>_variable</code> in Python.
+            </div>
+            <div class="concept-card" style="border-color:#2d6a2d; background:rgba(45,106,45,0.05)">
+              <div class="concept-name" style="color:#2d6a2d">public</div>
+              Accessible anywhere. Use sparingly — only for things that truly need external access.
+            </div>
+            <div class="concept-card" style="border-color:#555; background:#f8f8f8">
+              <div class="concept-name">getter</div>
+              A method that reads a private attribute. Can add validation, formatting, or computation.
+            </div>
+            <div class="concept-card" style="border-color:#555; background:#f8f8f8">
+              <div class="concept-name">setter</div>
+              A method that writes a private attribute. Enforces rules before accepting a value.
+            </div>
+            <div class="concept-card" style="border-color:#555; background:#f8f8f8">
+              <div class="concept-name">@property</div>
+              Python's Pythonic way — makes getters/setters look like attribute access.
+            </div>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-label">✅ The Fix — Live Code This</div>
+          <div class="code-wrap">
+            <div class="code-header">
+              <span class="code-lang">PYTHON — Proper Encapsulation</span>
+              <div class="code-dots"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+            </div>
+            <pre><span class="kw">class</span> <span class="cls">BankAccount</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="prop">self</span>, owner: str, balance: float):
+        <span class="prop">self</span>.__owner   = owner        <span class="cmt"># private: __ prefix</span>
+        <span class="prop">self</span>.__balance = <span class="num">0.0</span>         <span class="cmt"># always start via setter for validation</span>
+        <span class="prop">self</span>.balance   = balance      <span class="cmt"># uses property setter below</span>
+
+    <span class="cmt"># ── GETTER ──────────────────────────────</span>
+    <span class="kw">@property</span>
+    <span class="kw">def</span> <span class="fn">balance</span>(<span class="prop">self</span>) -> float:
+        <span class="ret">return</span> <span class="prop">self</span>.__balance
+
+    <span class="cmt"># ── SETTER (with validation) ──────────────</span>
+    <span class="kw">@balance.setter</span>
+    <span class="kw">def</span> <span class="fn">balance</span>(<span class="prop">self</span>, amount: float):
+        <span class="kw">if not</span> isinstance(amount, (int, float)):
+            <span class="kw">raise</span> <span class="cls">TypeError</span>(<span class="str">"Balance must be numeric"</span>)
+        <span class="kw">if</span> amount < <span class="num">0</span>:
+            <span class="kw">raise</span> <span class="cls">ValueError</span>(<span class="str">"Balance cannot be negative"</span>)
+        <span class="prop">self</span>.__balance = amount
+
+    <span class="cmt"># ── BEHAVIOUR ────────────────────────────</span>
+    <span class="kw">def</span> <span class="fn">deposit</span>(<span class="prop">self</span>, amount: float) -> <span class="kw">None</span>:
+        <span class="prop">self</span>.balance += amount  <span class="cmt"># goes through setter</span>
+        print(f<span class="str">"Deposited {amount}. New balance: {self.__balance}"</span>)
+
+    <span class="kw">def</span> <span class="fn">withdraw</span>(<span class="prop">self</span>, amount: float) -> bool:
+        <span class="kw">if</span> amount > <span class="prop">self</span>.__balance:
+            print(<span class="str">"Insufficient funds"</span>)
+            <span class="ret">return False</span>
+        <span class="prop">self</span>.__balance -= amount
+        <span class="ret">return True</span>
+
+<span class="cmt"># Usage</span>
+acc = <span class="cls">BankAccount</span>(<span class="str">"Alice"</span>, <span class="num">1000</span>)
+acc.deposit(<span class="num">500</span>)          <span class="cmt"># ✅ Deposited 500. New balance: 1500</span>
+acc.balance = <span class="num">-999</span>       <span class="cmt"># ✅ Raises ValueError — caught!</span>
+print(acc.__balance)      <span class="cmt"># ✅ AttributeError — truly private</span></pre>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-label">☕ Discussion — 5 min</div>
+          <div class="prompts">
+            <div class="prompt"><span class="prompt-q">Q1</span>Why can't we just trust other developers not to touch private data directly?</div>
+            <div class="prompt"><span class="prompt-q">Q2</span>What's the cost of adding getters/setters? When might it be overkill?</div>
+            <div class="prompt"><span class="prompt-q">Q3</span>Python uses convention (_x, __x) while Java enforces it. Which approach is better?</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEGMENT 3: BREAK -->
+    <div style="text-align:center; padding:16px; color:#aaa; font-family:var(--type-code); font-size:12px; letter-spacing:2px; border: 1px dashed var(--rule); border-radius:4px">
+      ☕ &nbsp; 10-MINUTE BREAK &nbsp; (0:50 – 1:00) &nbsp; — Suggested: Let students try breaking/fixing a small code snippet
+    </div>
+
+    <!-- SEGMENT 4 -->
+    <div class="segment">
+      <div class="seg-header" onclick="toggleSeg(this)">
+        <div class="seg-time">1:00<br>→ 1:30</div>
+        <div class="seg-info">
+          <span class="seg-type">Deep Dive · 30 min</span>
+          <span class="seg-title">Real-World Design: Information Hiding & Tell, Don't Ask</span>
+        </div>
+        <span class="seg-toggle">▼</span>
+      </div>
+      <div class="seg-body">
+        <div class="block">
+          <div class="block-label">🌍 Real-World Application</div>
+          <div class="analogy">
+            <strong>"Tell, Don't Ask" Principle:</strong> Instead of asking an object for its data and making decisions outside, tell the object to do something and let it decide how. This is the soul of encapsulation in practice.<br><br>
+            <em>Bad:</em> "Give me your age. If age &gt; 18, you're eligible." — logic lives outside.<br>
+            <em>Good:</em> "Are you eligible?" — object applies its own rules internally.
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-label">🔍 Java Example — with access modifiers</div>
+          <div class="code-wrap">
+            <div class="code-header">
+              <span class="code-lang">JAVA — Encapsulation with Tell-Don't-Ask</span>
+              <div class="code-dots"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+            </div>
+            <pre><span class="kw">public class</span> <span class="cls">Employee</span> {
+    <span class="kw">private</span> <span class="cls">String</span>  name;
+    <span class="kw">private</span> <span class="kw">double</span>  baseSalary;
+    <span class="kw">private</span> <span class="kw">int</span>     yearsOfService;
+
+    <span class="kw">public</span> <span class="fn">Employee</span>(<span class="cls">String</span> name, <span class="kw">double</span> salary, <span class="kw">int</span> years) {
+        <span class="prop">this</span>.name           = name;
+        <span class="prop">this</span>.baseSalary     = validateSalary(salary);
+        <span class="prop">this</span>.yearsOfService = years;
+    }
+
+    <span class="cmt">// Tell, don't ask — logic stays inside the class</span>
+    <span class="kw">public double</span> <span class="fn">calculateAnnualBonus</span>() {
+        <span class="kw">double</span> rate = yearsOfService > <span class="num">5</span> ? <span class="num">0.15</span> : <span class="num">0.05</span>;
+        <span class="ret">return</span> baseSalary * rate;
+    }
+
+    <span class="kw">public boolean</span> <span class="fn">isEligibleForPromotion</span>() {
+        <span class="ret">return</span> yearsOfService >= <span class="num">3</span> && baseSalary < <span class="num">100000</span>;
+    }
+
+    <span class="kw">public void</span> <span class="fn">giveRaise</span>(<span class="kw">double</span> percent) {
+        <span class="kw">if</span> (percent < <span class="num">0</span> || percent > <span class="num">50</span>)
+            <span class="kw">throw new</span> <span class="cls">IllegalArgumentException</span>(<span class="str">"Invalid raise %"</span>);
+        baseSalary *= (<span class="num">1</span> + percent / <span class="num">100</span>);
+    }
+
+    <span class="kw">private double</span> <span class="fn">validateSalary</span>(<span class="kw">double</span> s) {
+        <span class="kw">if</span> (s < <span class="num">0</span>) <span class="kw">throw new</span> <span class="cls">IllegalArgumentException</span>(<span class="str">"Negative salary"</span>);
+        <span class="ret">return</span> s;
+    }
+
+    <span class="cmt">// Only expose what callers truly need</span>
+    <span class="kw">public</span> <span class="cls">String</span> <span class="fn">getName</span>()        { <span class="ret">return</span> name; }
+    <span class="kw">public double</span> <span class="fn">getBaseSalary</span>()  { <span class="ret">return</span> baseSalary; }
+}</pre>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-label">🛠 Lab Exercise — 20 min</div>
+          <div class="exercise">
+            <strong>Exercise: Design a Student Grade Book</strong>
+            <ol class="ex-steps" style="margin-top:12px">
+              <li>Create a <code>Student</code> class with private attributes: <code>name</code>, <code>grades</code> (list of floats), <code>student_id</code></li>
+              <li>Add a <code>add_grade(score)</code> method that validates: 0 ≤ score ≤ 100</li>
+              <li>Add a <code>get_average()</code> method (computed, not stored — why?)</li>
+              <li>Add a <code>get_letter_grade()</code> method that returns A/B/C/D/F</li>
+              <li><strong>Bonus:</strong> Add a <code>get_report()</code> that returns a formatted string — demonstrate information hiding by never exposing the raw list</li>
+              <li><strong>Challenge:</strong> What happens if you try to set <code>student.grades = []</code> directly? How do you prevent it?</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEGMENT 5 -->
+    <div class="segment">
+      <div class="seg-header" onclick="toggleSeg(this)">
+        <div class="seg-time">1:45<br>→ 2:00</div>
+        <div class="seg-info">
+          <span class="seg-type">Wrap-up · 15 min</span>
+          <span class="seg-title">Debrief, Common Mistakes & Tomorrow's Bridge</span>
+        </div>
+        <span class="seg-toggle">▼</span>
+      </div>
+      <div class="seg-body">
+        <div class="block">
+          <div class="block-label">⚠ Common Mistakes Students Make</div>
+          <div class="tips">
+            <div class="tip" style="border-color:#e05c5c">
+              <span class="tip-icon">❌</span>
+              Making everything private — even utility/helper methods that subclasses legitimately need.
+            </div>
+            <div class="tip" style="border-color:#e05c5c">
+              <span class="tip-icon">❌</span>
+              Adding getters/setters for every private field by default (this defeats the purpose).
+            </div>
+            <div class="tip" style="border-color:#e05c5c">
+              <span class="tip-icon">❌</span>
+              Confusing encapsulation with security — private means "design boundary," not "hack-proof."
+            </div>
+            <div class="tip" style="border-color:#2d6a2d">
+              <span class="tip-icon">✅</span>
+              <strong>Rule of thumb:</strong> Ask "does the caller need to know this?" before making anything public.
+            </div>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-label">🌉 Bridge to Day 2</div>
+          <div class="analogy">
+            Encapsulation hides <em>data</em>. But what about hiding <em>complexity</em>? Tomorrow we look at <strong>Abstraction</strong> — the art of exposing only the <em>essential</em> interface while hiding implementation details entirely. Same spirit, different tool.
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-label">📝 Assessment Tasks</div>
+          <div class="assessment-grid">
+            <div class="assess-card">
+              <div class="assess-type">Quick Check</div>
+              <div class="assess-text">Name 3 real-world objects and identify what should be private vs public in a code model of them.</div>
+            </div>
+            <div class="assess-card">
+              <div class="assess-type">Take-Home</div>
+              <div class="assess-text">Refactor given "bad" code (3 classes with all-public attributes) using proper encapsulation.</div>
+            </div>
+            <div class="assess-card">
+              <div class="assess-type">Code Review</div>
+              <div class="assess-text">Review a classmate's Student class. Find any encapsulation violations and suggest fixes.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /segments -->
+
+  <div class="day-summary" style="--day-color:#4a90d9">
+    <div>
+      <div class="summary-col-title">Key Takeaways — Day 1</div>
+      <ul class="summary-list">
+        <li>Encapsulation = data + behavior bundled in one unit</li>
+        <li>Private attributes prevent invalid state corruption</li>
+        <li>Setters enforce validation rules at the boundary</li>
+        <li>Tell, Don't Ask keeps logic inside objects</li>
+        <li>Python uses convention; Java uses enforcement</li>
+      </ul>
+    </div>
+    <div>
+      <div class="summary-col-title">Vocabulary Introduced</div>
+      <ul class="summary-list">
+        <li>Encapsulation · Data hiding · Information hiding</li>
+        <li>Access modifiers: public, private, protected</li>
+        <li>Getter / Setter / @property</li>
+        <li>Name mangling (<code>__attr</code> in Python)</li>
+        <li>Tell, Don't Ask principle</li>
+      </ul>
+    </div>
+  </div>
+
+</div><!-- /day-0 -->
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- DAY 2: ABSTRACTION -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="day-1" class="day-panel">
+
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:24px">
+    <button class="expand-all-btn" onclick="expandAll(1)">▸ Expand All Segments</button>
+  </div>
+
+  <div class="timeline-strip">
+    <div class="tl-block" style="background:rgba(45,106,45,0.07)"><div class="tl-time">0:00</div><div class="tl-name">Recap + Hook</div></div>
+    <div class="tl-block" style="background:rgba(45,106,45,0.07)"><div class="tl-time">0:15</div><div class="tl-name">ABCs & Interfaces</div></div>
+    <div class="tl-block" style="background:rgba(45,106,45,0.07)"><div class="tl-time">0:45</div><div class="tl-name">Design Thinking</div></div>
+    <div class="tl-block break">☕ 10 min</div>
+    <div class="tl-block" style="background:rgba(45,106,45,0.07)"><div class="tl-time">1:10</div><div class="tl-name">Real Systems</div></div>
+    <div class="tl-block" style="background:rgba(45,106,45,0.07)"><div class="tl-time">1:30</div><div class="tl-name">Lab Exercise</div></div>
+    <div class="tl-block" style="background:rgba(45,106,45,0.07)"><div class="tl-time">1:50</div><div class="tl-name">Wrap-up</div></div>
+  </div>
+
+  <div class="day-header">
+    <div>
+      <div class="day-pillar" style="color:#2d6a2d">Pillar II · Day 2 of 4</div>
+      <div class="day-title">Abstraction</div>
+      <div class="day-tagline">Hiding implementation complexity. Defining contracts. Thinking in interfaces before implementations.</div>
+    </div>
+    <div class="day-meta-box">
+      <div class="meta-row"><span class="meta-key">Prerequisite</span><span class="meta-val">Day 1 (Encapsulation)</span></div>
+      <div class="meta-row"><span class="meta-key">Key Tool</span><span class="meta-val">Abstract Classes</span></div>
+      <div class="meta-row"><span class="meta-key">Python</span><span class="meta-val">abc module</span></div>
+      <div class="meta-row"><span class="meta-key">Java</span><span class="meta-val">abstract / interface</span></div>
+    </div>
+  </div>
+
+  <div class="objectives" style="border-color:#2d6a2d">
+    <div class="obj-title">Learning Objectives</div>
+    <ul class="obj-list">
+      <li>Distinguish abstraction from encapsulation</li>
+      <li>Define and implement abstract classes in Python and Java</li>
+      <li>Write concrete subclasses that fulfil abstract contracts</li>
+      <li>Explain the difference between abstract class and interface</li>
+      <li>Apply abstraction to model a real-world system</li>
+      <li>Understand the Dependency Inversion Principle at a surface level</li>
+    </ul>
+  </div>
+
+  <div class="segments">
+
+    <div class="segment open">
+      <div class="seg-header" onclick="toggleSeg(this)">
+        <div class="seg-time">0:00<br>→ 0:15</div>
+        <div class="seg-info">
+          <span class="seg-type">Hook · 15 min</span>
+          <span class="seg-title">How do you drive a car you've never seen before?</span>
+        </div>
+        <span class="seg-toggle">▼</span>
+      </div>
+      <div class="seg-body">
+        <div class="block">
+          <div class="block-label">📖 Opening Analogy</div>
+          <div class="analogy">
+            <strong>The Steering Wheel Abstraction:</strong> You can drive a Toyota, a BMW, or a Tesla without learning a new skill each time. Why? Because all cars share an <em>abstract interface</em> — steering wheel, pedals, gear shift. You don't need to know whether the engine is combustion or electric, how the transmission works, or the fuel injection timing. The interface is stable; the implementation changes.<br><br>
+            Write on the board: <em>"Program to an interface, not an implementation."</em>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-label">🔄 Quick Recap — 5 min</div>
+          <div class="prompts">
+            <div class="prompt"><span class="prompt-q">R1</span>Yesterday: Encapsulation bundles data + behavior. What does abstraction do differently?</div>
+            <div class="prompt"><span class="prompt-q">R2</span>Key distinction: Encapsulation hides <em>data</em>. Abstraction hides <em>implementation complexity</em>.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="segment">
+      <div class="seg-header" onclick="toggleSeg(this)">
+        <div class="seg-time">0:15<br>→ 0:45</div>
+        <div class="seg-info">
+          <span class="seg-type">Core Theory · 30 min</span>
+          <span class="seg-title">Abstract Classes, ABCs, and Contracts</span>
+        </div>
+        <span class="seg-toggle">▼</span>
+      </div>
+      <div class="seg-body">
+        <div class="block">
+          <div class="block-label">💻 Python Abstract Base Class</div>
+          <div class="code-wrap">
+            <div class="code-header"><span class="code-lang">PYTHON — Abstract Class with abc module</span><div class="code-dots"><span class="r"></span><span class="y"></span><span class="g"></span></div></div>
+            <pre><span class="kw">from</span> abc <span class="kw">import</span> ABC, abstractmethod
+
+<span class="cmt"># ── The CONTRACT (abstract) ──────────────────────</span>
+<span class="kw">class</span> <span class="cls">Shape</span>(ABC):
+    <span class="str">"""Abstract shape. Defines WHAT every shape must do,
+    not HOW it does it."""</span>
+
+    <span class="kw">@abstractmethod</span>
+    <span class="kw">def</span> <span class="fn">area</span>(<span class="prop">self</span>) -> float:
+        <span class="str">"""Return the area of this shape."""</span>
+
+    <span class="kw">@abstractmethod</span>
+    <span class="kw">def</span> <span class="fn">perimeter</span>(<span class="prop">self</span>) -> float:
+        <span class="str">"""Return the perimeter of this shape."""</span>
+
+    <span class="cmt"># Concrete method — shared behaviour</span>
+    <span class="kw">def</span> <span class="fn">describe</span>(<span class="prop">self</span>) -> str:
+        <span class="ret">return</span> f<span class="str">"{type(self).__name__}: area={self.area():.2f}, perimeter={self.perimeter():.2f}"</span>
+
+<span class="cmt"># ── CONCRETE IMPLEMENTATIONS ─────────────────────</span>
+<span class="kw">class</span> <span class="cls">Circle</span>(<span class="cls">Shape</span>):
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="prop">self</span>, radius: float):
+        <span class="prop">self</span>.__radius = radius
+
+    <span class="kw">def</span> <span class="fn">area</span>(<span class="prop">self</span>) -> float:
+        <span class="ret">return</span> <span class="num">3.14159</span> * <span class="prop">self</span>.__radius ** <span class="num">2</span>
+
+    <span class="kw">def</span> <span class="fn">perimeter</span>(<span class="prop">self</span>) -> float:
+        <span class="ret">return</span> <span class="num">2</span> * <span class="num">3.14159</span> * <span class="prop">self</span>.__radius
+
+<span class="kw">class</span> <span class="cls">Rectangle</span>(<span class="cls">Shape</span>):
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="prop">self</span>, w: float, h: float):
+        <span class="prop">self</span>.__w, <span class="prop">self</span>.__h = w, h
+
+    <span class="kw">def</span> <span class="fn">area</span>(<span class="prop">self</span>) -> float:
+        <span class="ret">return</span> <span class="prop">self</span>.__w * <span class="prop">self</span>.__h
+
+    <span class="kw">def</span> <span class="fn">perimeter</span>(<span class="prop">self</span>) -> float:
+        <span class="ret">return</span> <span class="num">2</span> * (<span class="prop">self</span>.__w + <span class="prop">self</span>.__h)
+
+<span class="cmt"># ── CALLER doesn't care HOW — just calls the contract ─</span>
+shapes = [<span class="cls">Circle</span>(<span class="num">5</span>), <span class="cls">Rectangle</span>(<span class="num">4</span>, <span class="num">6</span>), <span class="cls">Circle</span>(<span class="num">3</span>)]
+<span class="kw">for</span> shape <span class="kw">in</span> shapes:
+    print(shape.describe())   <span class="cmt"># Works for ALL shapes!</span>
+
+<span class="cmt"># Cannot instantiate abstract class:</span>
+s = <span class="cls">Shape</span>()   <span class="cmt"># ✅ TypeError — cannot instantiate abstract class</span></pre>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-label">☕ Discussion Prompts</div>
+          <div class="prompts">
+            <div class="prompt"><span class="prompt-q">Q1</span>Why can't you instantiate Shape directly? What would it even mean to have "a Shape"?</div>
+            <div class="prompt"><span class="prompt-q">Q2</span>The <code>describe()</code> method is concrete, not abstract. Why is it in the abstract class?</div>
+            <div class="prompt"><span class="prompt-q">Q3</span>If you add a new method to Shape (e.g., <code>draw()</code>), what happens to all existing subclasses?</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center; padding:16px; color:#aaa; font-family:var(--type-code); font-size:12px; letter-spacing:2px; border: 1px dashed var(--rule); border-radius:4px">
+      ☕ &nbsp; 10-MINUTE BREAK &nbsp; (0:50 – 1:00) &nbsp; — Suggested: Ask students to think of 3 real APIs they use daily (Google Maps, Stripe, etc.) — what do they abstract away?
+    </div>
+
+    <div class="segment">
+      <div class="seg-header" onclick="toggleSeg(this)">
+        <div class="seg-time">1:00<br>→ 1:30</div>
+        <div class="seg-info">
+          <span class="seg-type">Deep Dive · 30 min</span>
+          <span class="seg-title">Abstract Class vs Interface · Real Payment System</span>
+        </div>
+        <span class="seg-toggle">▼</span>
+      </div>
+      <div class="seg-body">
+        <div class="block">
+          <div class="block-label">⚖ Abstract Class vs Interface</div>
+          <div class="concept-cards">
+            <div class="concept-card" style="border-color:#2d6a2d; background:rgba(45,106,45,0.05)">
+              <div class="concept-name" style="color:#2d6a2d">Abstract Class</div>
+              Can have concrete methods + state. Partial implementation. "Is-a" relationship. Single inheritance in Java.
+            </div>
+            <div class="concept-card" style="border-color:#1a3a5c; background:rgba(26,58,92,0.05)">
+              <div class="concept-name" style="color:#1a3a5c">Interface (Java)</div>
+              Pure contract — only method signatures (before Java 8). Multiple interfaces allowed. "Can-do" relationship.
+            </div>
+            <div class="concept-card" style="border-color:#b8860b; background:#fffbeb">
+              <div class="concept-name" style="color:#b8860b">Python Protocol</div>
+              Duck typing + structural subtyping. If it has the right methods, it works — no explicit inheritance needed.
+            </div>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-label">🏦 Real System: Payment Gateway Abstraction</div>
+          <div class="code-wrap">
+            <div class="code-header"><span class="code-lang">PYTHON — Payment System (Real-world abstraction)</span><div class="code-dots"><span class="r"></span><span class="y"></span><span class="g"></span></div></div>
+            <pre><span class="kw">from</span> abc <span class="kw">import</span> ABC, abstractmethod
+<span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass
+
+<span class="kw">@dataclass</span>
+<span class="kw">class</span> <span class="cls">PaymentResult</span>:
+    success: bool
+    transaction_id: str
+    message: str
+
+<span class="kw">class</span> <span class="cls">PaymentGateway</span>(ABC):
+    <span class="str">"""Abstract gateway — any payment provider must implement this."""</span>
+
+    <span class="kw">@abstractmethod</span>
+    <span class="kw">def</span> <span class="fn">charge</span>(<span class="prop">self</span>, amount: float, currency: str) -> <span class="cls">PaymentResult</span>:
+        <span class="kw">pass</span>
+
+    <span class="kw">@abstractmethod</span>
+    <span class="kw">def</span> <span class="fn">refund</span>(<span class="prop">self</span>, transaction_id: str) -> <span class="cls">PaymentResult</span>:
+        <span class="kw">pass</span>
+
+<span class="cmt"># Each provider implements the same interface differently</span>
+<span class="kw">class</span> <span class="cls">StripeGateway</span>(<span class="cls">PaymentGateway</span>):
+    <span class="kw">def</span> <span class="fn">charge</span>(<span class="prop">self</span>, amount, currency):
+        <span class="cmt"># Stripe-specific API calls hidden here</span>
+        <span class="ret">return</span> <span class="cls">PaymentResult</span>(success=<span class="kw">True</span>, transaction_id=<span class="str">"ch_stripe_123"</span>, message=<span class="str">"OK"</span>)
+
+    <span class="kw">def</span> <span class="fn">refund</span>(<span class="prop">self</span>, transaction_id):
+        <span class="ret">return</span> <span class="cls">PaymentResult</span>(success=<span class="kw">True</span>, transaction_id=transaction_id, message=<span class="str">"Refunded"</span>)
+
+<span class="kw">class</span> <span class="cls">PayPalGateway</span>(<span class="cls">PaymentGateway</span>):
+    <span class="kw">def</span> <span class="fn">charge</span>(<span class="prop">self</span>, amount, currency):
+        <span class="ret">return</span> <span class="cls">PaymentResult</span>(success=<span class="kw">True</span>, transaction_id=<span class="str">"pp_txn_456"</span>, message=<span class="str">"OK"</span>)
+
+    <span class="kw">def</span> <span class="fn">refund</span>(<span class="prop">self</span>, transaction_id):
+        <span class="ret">return</span> <span class="cls">PaymentResult</span>(success=<span class="kw">True</span>, transaction_id=transaction_id, message=<span class="str">"Refunded"</span>)
+
+<span class="cmt"># ── OrderProcessor doesn't know which gateway it uses ─</span>
+<span class="kw">class</span> <span class="cls">OrderProcessor</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="prop">self</span>, gateway: <span class="cls">PaymentGateway</span>):  <span class="cmt"># depends on abstraction!</span>
+        <span class="prop">self</span>.__gateway = gateway
+
+    <span class="kw">def</span> <span class="fn">process_order</span>(<span class="prop">self</span>, amount: float) -> str:
+        result = <span class="prop">self</span>.__gateway.charge(amount, <span class="str">"INR"</span>)
+        <span class="ret">return</span> result.transaction_id <span class="kw">if</span> result.success <span class="kw">else</span> <span class="str">"FAILED"</span>
+
+<span class="cmt"># Swap payment providers with zero changes to OrderProcessor!</span>
+processor = <span class="cls">OrderProcessor</span>(<span class="cls">StripeGateway</span>())
+processor = <span class="cls">OrderProcessor</span>(<span class="cls">PayPalGateway</span>())  <span class="cmt"># same interface ✅</span></pre>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-label">🛠 Lab Exercise — 25 min</div>
+          <div class="exercise">
+            <strong>Exercise: Design a Notification System</strong>
+            <ol class="ex-steps" style="margin-top:12px">
+              <li>Create an abstract <code>Notifier</code> class with methods: <code>send(recipient, message)</code> and <code>get_channel_name()</code></li>
+              <li>Implement <code>EmailNotifier</code>, <code>SMSNotifier</code>, and <code>PushNotifier</code> — each with different "sending" logic (print statements fine)</li>
+              <li>Create a <code>NotificationService</code> class that accepts a <em>list</em> of Notifiers and sends to all of them</li>
+              <li><strong>Bonus:</strong> What happens if you forget to implement <code>send()</code> in a subclass? Show the error and explain why it's helpful.</li>
+              <li><strong>Design question:</strong> Where would you put a <code>log_notification()</code> method — abstract or concrete? Defend your answer.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="segment">
+      <div class="seg-header" onclick="toggleSeg(this)">
+        <div class="seg-time">1:50<br>→ 2:00</div>
+        <div class="seg-info">
+          <span class="seg-type">Wrap-up · 10 min</span>
+          <span class="seg-title">Abstraction vs Encapsulation · Bridge to Inheritance</span>
+        </div>
+        <span class="seg-toggle">▼</span>
+      </div>
+      <div class="seg-body">
+        <div class="block">
+          <div class="block-label">🔑 The Critical Distinction (write on board)</div>
+          <div class="analogy">
+            <strong>Encapsulation</strong> asks: "What should be hidden from outside users of this class?"<br><br>
+            <strong>Abstraction</strong> asks: "What is the essential interface users need, regardless of how I implement it?"<br><br>
+            <em>They work together:</em> Abstraction defines the what. Encapsulation protects the how.
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-label">🌉 Bridge to Day 3</div>
+          <div class="analogy">
+            We've defined contracts. Tomorrow: <strong>Inheritance</strong> — how child classes <em>reuse and extend</em> those contracts. What does it mean for a <code>SavingsAccount</code> to "be a" <code>BankAccount</code>? What does it inherit for free, and what must it override?
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="day-summary">
+    <div>
+      <div class="summary-col-title">Key Takeaways — Day 2</div>
+      <ul class="summary-list">
+        <li>Abstraction hides complexity behind clean interfaces</li>
+        <li>Abstract classes define contracts, not implementations</li>
+        <li>Callers depend on the abstract type, not concrete ones</li>
+        <li>Swapping implementations requires zero caller changes</li>
+        <li>"Program to an interface, not an implementation"</li>
+      </ul>
+    </div>
+    <div>
+      <div class="summary-col-title">Vocabulary Introduced</div>
+      <ul class="summary-list">
+        <li>Abstract class · Concrete class · ABC module</li>
+        <li>@abstractmethod decorator</li>
+        <li>Interface (Java) · Protocol (Python)</li>
+        <li>Contract · Implementation hiding</li>
+        <li>Dependency Inversion (introductory)</li>
+      </ul>
+    </div>
+  </div>
+
+</div><!-- /day-1 -->
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- DAY 3: INHERITANCE -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="day-2" class="day-panel">
+
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:24px">
+    <button class="expand-all-btn" onclick="expandAll(2)">▸ Expand All Segments</button>
+  </div>
+
+  <div class="timeline-strip">
+    <div class="tl-block" style="background:rgba(122,31,31,0.07)"><div class="tl-time">0:00</div><div class="tl-name">Recap + Why Inherit?</div></div>
+    <div class="tl-block" style="background:rgba(122,31,31,0.07)"><div class="tl-time">0:20</div><div class="tl-name">Syntax Deep Dive</div></div>
+    <div class="tl-block" style="background:rgba(122,31,31,0.07)"><div class="tl-time">0:45</div><div class="tl-name">Method Resolution</div></div>
+    <div class="tl-block break">☕ 10 min</div>
+    <div class="tl-block" style="background:rgba(122,31,31,0.07)"><div class="tl-time">1:10</div><div class="tl-name">Composition vs Inheritance</div></div>
+    <div class="tl-block" style="background:rgba(122,31,31,0.07)"><div class="tl-time">1:35</div><div class="tl-name">Lab Exercise</div></div>
+    <div class="tl-block" style="background:rgba(122,31,31,0.07)"><div class="tl-time">1:50</div><div class="tl-name">Debrief</div></div>
+  </div>
+
+  <div class="day-header">
+    <div>
+      <div class="day-pillar" style="color:#7a1f1f">Pillar III · Day 3 of 4</div>
+      <div class="day-title">Inheritance</div>
+      <div class="day-tagline">Building new classes from existing ones. Code reuse through "is-a" relationships. Method overriding and the MRO.</div>
+    </div>
+    <div class="day-meta-box">
+      <div class="meta-row"><span class="meta-key">Prerequisite</span><span class="meta-val">Days 1 & 2</span></div>
+      <div class="meta-row"><span class="meta-key">Key Concept</span><span class="meta-val">super(), MRO, override</span></div>
+      <div class="meta-row"><span class="meta-key">Danger Zone</span><span class="meta-val">Deep inheritance chains</span></div>
+      <div class="meta-row"><span class="meta-key">Principle</span><span class="meta-val">Liskov Substitution</span></div>
+    </div>
+  </div>
+
+  <div class="objectives" style="border-color:#7a1f1f">
+    <div class="obj-title">Learning Objectives</div>
+    <ul class="obj-list">
+      <li>Implement single and multi-level inheritance in Python/Java</li>
+      <li>Use super() correctly to call parent methods</li>
+      <li>Override methods and understand when to do so</li>
+      <li>Explain Python's MRO (Method Resolution Order)</li>
+      <li>Articulate the Liskov Substitution Principle</li>
+      <li>Recognize when inheritance causes problems (prefer composition)</li>
+    </ul>
+  </div>
+
+  <div class="segments">
+
+    <div class="segment open">
+      <div class="seg-header" onclick="toggleSeg(this)">
+        <div class="seg-time">0:00<br>→ 0:20</div>
+        <div class="seg-info">
+          <span class="seg-type">Hook · 20 min</span>
+          <span class="seg-title">Why Re-invent the Wheel? The Biology of Code</span>
+        </div>
+        <span class="seg-toggle">▼</span>
+      </div>
+      <div class="seg-body">
+        <div class="block">
+          <div class="block-label">📖 Opening Analogy</div>
+          <div class="analogy">
+            <strong>Biological Taxonomy:</strong> All mammals breathe air, nurse young, and are warm-blooded. A Dog doesn't re-implement "breathe" — it <em>inherits</em> it from Mammal. But Dog also overrides with specific behavior: it barks (Cat meows). The shared traits live in one place; specialists override only what differs.<br><br>
+            In code: <em>"Don't repeat yourself (DRY). Write common behavior once in a parent; let children specialize."</em>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-label">💻 The Foundation — Parent Class</div>
+          <div class="code-wrap">
+            <div class="code-header"><span class="code-lang">PYTHON — Inheritance Fundamentals</span><div class="code-dots"><span class="r"></span><span class="y"></span><span class="g"></span></div></div>
+            <pre><span class="kw">class</span> <span class="cls">Vehicle</span>:        <span class="cmt"># Parent (Base) class</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="prop">self</span>, make: str, model: str, year: int):
+        <span class="prop">self</span>.make  = make
+        <span class="prop">self</span>.model = model
+        <span class="prop">self</span>.year  = year
+        <span class="prop">self</span>._speed = <span class="num">0</span>          <span class="cmt"># protected — subclasses can access</span>
+
+    <span class="kw">def</span> <span class="fn">accelerate</span>(<span class="prop">self</span>, amount: int) -> <span class="kw">None</span>:
+        <span class="prop">self</span>._speed += amount
+        print(f<span class="str">"{self.model} speed: {self._speed} km/h"</span>)
+
+    <span class="kw">def</span> <span class="fn">fuel_type</span>(<span class="prop">self</span>) -> str:     <span class="cmt"># to be overridden</span>
+        <span class="ret">return</span> <span class="str">"unknown"</span>
+
+    <span class="kw">def</span> <span class="fn">__str__</span>(<span class="prop">self</span>) -> str:
+        <span class="ret">return</span> f<span class="str">"{self.year} {self.make} {self.model} ({self.fuel_type()})"</span>
+
+
+<span class="kw">class</span> <span class="cls">Car</span>(<span class="cls">Vehicle</span>):    <span class="cmt"># Inherits everything from Vehicle</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="prop">self</span>, make, model, year, num_doors: int):
+        <span class="kw">super()</span>.<span class="fn">__init__</span>(make, model, year)   <span class="cmt"># call parent __init__</span>
+        <span class="prop">self</span>.__num_doors = num_doors
+
+    <span class="kw">def</span> <span class="fn">fuel_type</span>(<span class="prop">self</span>) -> str:     <span class="cmt"># OVERRIDE</span>
+        <span class="ret">return</span> <span class="str">"petrol"</span>
+
+
+<span class="kw">class</span> <span class="cls">ElectricCar</span>(<span class="cls">Car</span>):  <span class="cmt"># Multi-level: ElectricCar → Car → Vehicle</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="prop">self</span>, make, model, year, num_doors, battery_kwh: float):
+        <span class="kw">super()</span>.<span class="fn">__init__</span>(make, model, year, num_doors)
+        <span class="prop">self</span>.__battery_kwh = battery_kwh
+
+    <span class="kw">def</span> <span class="fn">fuel_type</span>(<span class="prop">self</span>) -> str:     <span class="cmt"># OVERRIDE again</span>
+        <span class="ret">return</span> f<span class="str">"electric ({self.__battery_kwh} kWh battery)"</span>
+
+    <span class="kw">def</span> <span class="fn">charge</span>(<span class="prop">self</span>) -> <span class="kw">None</span>:        <span class="cmt"># NEW method unique to ElectricCar</span>
+        print(f<span class="str">"Charging {self.model}..."</span>)
+
+<span class="cmt"># All vehicles respond to the same interface:</span>
+vehicles = [
+    <span class="cls">Car</span>(<span class="str">"Toyota"</span>, <span class="str">"Camry"</span>, <span class="num">2022</span>, <span class="num">4</span>),
+    <span class="cls">ElectricCar</span>(<span class="str">"Tesla"</span>, <span class="str">"Model 3"</span>, <span class="num">2023</span>, <span class="num">4</span>, <span class="num">82</span>),
+]
+<span class="kw">for</span> v <span class="kw">in</span> vehicles:
+    print(v)         <span class="cmt"># __str__ inherited by all</span>
+    v.accelerate(<span class="num">30</span>) <span class="cmt"># method also inherited</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="segment">
+      <div class="seg-header" onclick="toggleSeg(this)">
+        <div class="seg-time">0:45<br>→ 1:00</div>
+        <div class="seg-info">
+          <span class="seg-type">Advanced · 15 min</span>
+          <span class="seg-title">MRO, Liskov Substitution Principle & The Fragile Base Problem</span>
+        </div>
+        <span class="seg-toggle">▼</span>
+      </div>
+      <div class="seg-body">
+        <div class="block">
+          <div class="block-label">🔬 Python MRO — Method Resolution Order</div>
+          <div class="code-wrap">
+            <div class="code-header"><span class="code-lang">PYTHON — MRO and Diamond Problem</span><div class="code-dots"><span class="r"></span><span class="y"></span><span class="g"></span></div></div>
+            <pre><span class="kw">class</span> <span class="cls">A</span>:
+    <span class="kw">def</span> <span class="fn">hello</span>(<span class="prop">self</span>): print(<span class="str">"Hello from A"</span>)
+
+<span class="kw">class</span> <span class="cls">B</span>(<span class="cls">A</span>):
+    <span class="kw">def</span> <span class="fn">hello</span>(<span class="prop">self</span>): print(<span class="str">"Hello from B"</span>)
+
+<span class="kw">class</span> <span class="cls">C</span>(<span class="cls">A</span>):
+    <span class="kw">def</span> <span class="fn">hello</span>(<span class="prop">self</span>): print(<span class="str">"Hello from C"</span>)
+
+<span class="kw">class</span> <span class="cls">D</span>(<span class="cls">B</span>, <span class="cls">C</span>):   <span class="cmt"># Multiple inheritance — diamond!</span>
+    <span class="kw">pass</span>
+
+d = <span class="cls">D</span>()
+d.hello()    <span class="cmt"># Which hello() wins?</span>
+
+print(<span class="cls">D</span>.__mro__)
+<span class="cmt"># → (D, B, C, A, object)  ← Python uses C3 linearisation</span>
+<span class="cmt"># Left-to-right depth-first, but A appears only once</span></pre>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-label">⚖ Liskov Substitution Principle (LSP)</div>
+          <div class="analogy">
+            <strong>LSP:</strong> If S is a subtype of T, then objects of type T may be replaced by objects of type S without breaking the program.<br><br>
+            Simple test: Can you swap a <code>Car</code> for any place expecting a <code>Vehicle</code> and have everything still work? If yes — good inheritance. If no — you're breaking LSP.<br><br>
+            <em>Classic violation:</em> Making Square inherit from Rectangle. A Square that overrides <code>set_width()</code> to also change height breaks the contract that Rectangle's sides are independent.
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-label">☕ Discussion</div>
+          <div class="prompts">
+            <div class="prompt"><span class="prompt-q">Q1</span>Is ElectricCar a Vehicle? Is it a Car? What does that mean for the MRO?</div>
+            <div class="prompt"><span class="prompt-q">Q2</span>"Prefer composition over inheritance" — why? When would you choose composition instead?</div>
+            <div class="prompt"><span class="prompt-q">Q3</span>What's the risk of deep inheritance chains (Vehicle → Car → SportsCar → LimitedEditionSportsCar)?</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center; padding:16px; color:#aaa; font-family:var(--type-code); font-size:12px; letter-spacing:2px; border: 1px dashed var(--rule); border-radius:4px">
+      ☕ &nbsp; 10-MINUTE BREAK &nbsp; (1:00 – 1:10)
+    </div>
+
+    <div class="segment">
+      <div class="seg-header" onclick="toggleSeg(this)">
+        <div class="seg-time">1:10<br>→ 1:35</div>
+        <div class="seg-info">
+          <span class="seg-type">Critical Thinking · 25 min</span>
+          <span class="seg-title">Composition vs Inheritance — When Inheritance Goes Wrong</span>
+        </div>
+        <span class="seg-toggle">▼</span>
+      </div>
+      <div class="seg-body">
+        <div class="block">
+          <div class="block-label">🏗 Composition Alternative</div>
+          <div class="code-wrap">
+            <div class="code-header"><span class="code-lang">PYTHON — Composition (often better than deep inheritance)</span><div class="code-dots"><span class="r"></span><span class="y"></span><span class="g"></span></div></div>
+            <pre><span class="cmt"># Instead of: FlyingSwimmingDuck → Duck → Animal (messy!)</span>
+<span class="cmt"># Compose behaviors as objects:</span>
+
+<span class="kw">class</span> <span class="cls">FlyBehavior</span>:
+    <span class="kw">def</span> <span class="fn">fly</span>(<span class="prop">self</span>): print(<span class="str">"Flying with wings"</span>)
+
+<span class="kw">class</span> <span class="cls">NoFlyBehavior</span>:
+    <span class="kw">def</span> <span class="fn">fly</span>(<span class="prop">self</span>): print(<span class="str">"Cannot fly"</span>)
+
+<span class="kw">class</span> <span class="cls">Duck</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="prop">self</span>, name: str, fly_behavior):
+        <span class="prop">self</span>.name = name
+        <span class="prop">self</span>.__fly = fly_behavior  <span class="cmt"># behavior COMPOSED in, not inherited</span>
+
+    <span class="kw">def</span> <span class="fn">perform_fly</span>(<span class="prop">self</span>):
+        <span class="prop">self</span>.__fly.fly()
+
+    <span class="kw">def</span> <span class="fn">set_fly_behavior</span>(<span class="prop">self</span>, behavior):  <span class="cmt"># can swap at RUNTIME!</span>
+        <span class="prop">self</span>.__fly = behavior
+
+mallard = <span class="cls">Duck</span>(<span class="str">"Mallard"</span>, <span class="cls">FlyBehavior</span>())
+rubber  = <span class="cls">Duck</span>(<span class="str">"Rubber"</span>,  <span class="cls">NoFlyBehavior</span>())
+
+mallard.perform_fly()   <span class="cmt"># Flying with wings</span>
+rubber.perform_fly()    <span class="cmt"># Cannot fly</span></pre>
+          </div>
+          <div class="tips">
+            <div class="tip" style="border-color:#7a1f1f">
+              <span class="tip-icon">🎯</span>
+              <strong>Key insight:</strong> Inheritance is "is-a". Composition is "has-a". Both are valid. The question is: does the subtype <em>truly</em> pass the Liskov test?
+            </div>
+            <div class="tip" style="border-color:#b8860b">
+              <span class="tip-icon">📏</span>
+              <strong>Rule:</strong> Prefer composition when behavior varies independently, or when inheritance would require inheriting unwanted methods.
+            </div>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-label">🛠 Lab Exercise — 20 min</div>
+          <div class="exercise">
+            <strong>Exercise: University Staff Hierarchy</strong>
+            <ol class="ex-steps" style="margin-top:12px">
+              <li>Create a <code>Person</code> base class: <code>name</code>, <code>age</code>, <code>get_info()</code></li>
+              <li>Create <code>Employee(Person)</code>: adds <code>employee_id</code>, <code>salary</code>, <code>calculate_pay()</code></li>
+              <li>Create <code>Professor(Employee)</code>: adds <code>department</code>, <code>teach(course)</code>, overrides <code>get_info()</code></li>
+              <li>Create <code>TeachingAssistant(Employee)</code>: adds <code>supervisor</code>, <code>grade_papers()</code></li>
+              <li>Use <code>super()</code> at every level — trace the call chain on the board</li>
+              <li><strong>Challenge:</strong> Now add a <code>PartTimeTA</code> who is both a Student AND an Employee. How do you handle multiple inheritance? Show MRO.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="segment">
+      <div class="seg-header" onclick="toggleSeg(this)">
+        <div class="seg-time">1:50<br>→ 2:00</div>
+        <div class="seg-info">
+          <span class="seg-type">Wrap-up · 10 min</span>
+          <span class="seg-title">Inheritance Rules & Bridge to Polymorphism</span>
+        </div>
+        <span class="seg-toggle">▼</span>
+      </div>
+      <div class="seg-body">
+        <div class="block">
+          <div class="block-label">📋 The 3 Rules of Good Inheritance</div>
+          <div class="tips">
+            <div class="tip" style="border-color:#2d6a2d">
+              <span class="tip-icon">✅</span>
+              <strong>Rule 1 — Is-A test:</strong> SubClass IS-A ParentClass must be true in plain English. "A Dog is an Animal" ✓. "A Stack is a Vector" ✗ (Java's mistake).
+            </div>
+            <div class="tip" style="border-color:#2d6a2d">
+              <span class="tip-icon">✅</span>
+              <strong>Rule 2 — LSP:</strong> Every subclass instance must be usable wherever a parent is expected, without breaking behavior.
+            </div>
+            <div class="tip" style="border-color:#2d6a2d">
+              <span class="tip-icon">✅</span>
+              <strong>Rule 3 — Don't inherit for code reuse alone:</strong> If you're inheriting just to get methods without the "is-a" relationship — use composition instead.
+            </div>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-label">🌉 Bridge to Day 4</div>
+          <div class="analogy">
+            Tomorrow is where everything comes together. <strong>Polymorphism</strong> — "many forms." We've set up the hierarchy (Inheritance) and the contracts (Abstraction). Now we'll see how a single piece of code can work with <em>any</em> type in a hierarchy — automatically doing the right thing for each.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="day-summary">
+    <div>
+      <div class="summary-col-title">Key Takeaways — Day 3</div>
+      <ul class="summary-list">
+        <li>Inheritance reuses code via "is-a" relationships</li>
+        <li>super() calls the parent's version of a method</li>
+        <li>Method overriding specializes inherited behavior</li>
+        <li>MRO determines which method wins in multiple inheritance</li>
+        <li>LSP: subclasses must be drop-in replacements for parents</li>
+      </ul>
+    </div>
+    <div>
+      <div class="summary-col-title">Vocabulary Introduced</div>
+      <ul class="summary-list">
+        <li>Parent / Child / Base / Derived class</li>
+        <li>super() · Method overriding · __mro__</li>
+        <li>Liskov Substitution Principle</li>
+        <li>Composition vs Inheritance</li>
+        <li>Diamond problem · C3 linearization</li>
+      </ul>
+    </div>
+  </div>
+
+</div><!-- /day-2 -->
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- DAY 4: POLYMORPHISM -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="day-3" class="day-panel">
+
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:24px">
+    <button class="expand-all-btn" onclick="expandAll(3)">▸ Expand All Segments</button>
+  </div>
+
+  <div class="timeline-strip">
+    <div class="tl-block" style="background:rgba(74,32,112,0.07)"><div class="tl-time">0:00</div><div class="tl-name">Recap All 3 Pillars</div></div>
+    <div class="tl-block" style="background:rgba(74,32,112,0.07)"><div class="tl-time">0:20</div><div class="tl-name">Runtime Polymorphism</div></div>
+    <div class="tl-block" style="background:rgba(74,32,112,0.07)"><div class="tl-time">0:45</div><div class="tl-name">Duck Typing</div></div>
+    <div class="tl-block break">☕ 10 min</div>
+    <div class="tl-block" style="background:rgba(74,32,112,0.07)"><div class="tl-time">1:10</div><div class="tl-name">Operator Overloading</div></div>
+    <div class="tl-block" style="background:rgba(74,32,112,0.07)"><div class="tl-time">1:30</div><div class="tl-name">Grand Lab Exercise</div></div>
+    <div class="tl-block" style="background:rgba(74,32,112,0.07)"><div class="tl-time">1:50</div><div class="tl-name">Course Synthesis</div></div>
+  </div>
+
+  <div class="day-header">
+    <div>
+      <div class="day-pillar" style="color:#4a2070">Pillar IV · Day 4 of 4</div>
+      <div class="day-title">Polymorphism</div>
+      <div class="day-tagline">One interface, many forms. Objects of different types responding to the same method call differently — automatically.</div>
+    </div>
+    <div class="day-meta-box">
+      <div class="meta-row"><span class="meta-key">Forms</span><span class="meta-val">Runtime · Compile-time</span></div>
+      <div class="meta-row"><span class="meta-key">Python</span><span class="meta-val">Duck typing</span></div>
+      <div class="meta-row"><span class="meta-key">Java</span><span class="meta-val">Method overriding/loading</span></div>
+      <div class="meta-row"><span class="meta-key">Capstone</span><span class="meta-val">Full system design</span></div>
+    </div>
+  </div>
+
+  <div class="objectives" style="border-color:#4a2070">
+    <div class="obj-title">Learning Objectives</div>
+    <ul class="obj-list">
+      <li>Distinguish runtime vs compile-time polymorphism</li>
+      <li>Implement method overriding to achieve runtime dispatch</li>
+      <li>Explain Python duck typing and its power</li>
+      <li>Use operator overloading (__add__, __str__, etc.)</li>
+      <li>Recognize the Open/Closed Principle in practice</li>
+      <li>Design a complete system using all 4 OOP pillars together</li>
+    </ul>
+  </div>
+
+  <div class="segments">
+
+    <div class="segment open">
+      <div class="seg-header" onclick="toggleSeg(this)">
+        <div class="seg-time">0:00<br>→ 0:20</div>
+        <div class="seg-info">
+          <span class="seg-type">Hook · 20 min</span>
+          <span class="seg-title">The '+' Operator: Polymorphism You Already Know</span>
+        </div>
+        <span class="seg-toggle">▼</span>
+      </div>
+      <div class="seg-body">
+        <div class="block">
+          <div class="block-label">📖 Start with what they already know</div>
+          <div class="analogy">
+            <strong>The + Operator:</strong> Write this on the board:<br><br>
+            <code>2 + 3 = 5</code> &nbsp; (integer addition)<br>
+            <code>"hello" + " world" = "hello world"</code> &nbsp; (string concatenation)<br>
+            <code>[1,2] + [3,4] = [1,2,3,4]</code> &nbsp; (list joining)<br><br>
+            Same operator <code>+</code>. Three different types. Three different behaviors. Python decides at <em>runtime</em> which behavior to invoke based on the object's type. <strong>This is polymorphism.</strong>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-label">💻 Runtime Polymorphism — Core Example</div>
+          <div class="code-wrap">
+            <div class="code-header"><span class="code-lang">PYTHON — Runtime Polymorphism via Method Overriding</span><div class="code-dots"><span class="r"></span><span class="y"></span><span class="g"></span></div></div>
+            <pre><span class="kw">class</span> <span class="cls">Animal</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="prop">self</span>, name: str):
+        <span class="prop">self</span>.name = name
+
+    <span class="kw">def</span> <span class="fn">speak</span>(<span class="prop">self</span>) -> str:
+        <span class="kw">raise</span> <span class="cls">NotImplementedError</span>(<span class="str">"Subclass must implement speak()"</span>)
+
+
+<span class="kw">class</span> <span class="cls">Dog</span>(<span class="cls">Animal</span>):
+    <span class="kw">def</span> <span class="fn">speak</span>(<span class="prop">self</span>) -> str:
+        <span class="ret">return</span> f<span class="str">"{self.name} says: Woof!"</span>
+
+<span class="kw">class</span> <span class="cls">Cat</span>(<span class="cls">Animal</span>):
+    <span class="kw">def</span> <span class="fn">speak</span>(<span class="prop">self</span>) -> str:
+        <span class="ret">return</span> f<span class="str">"{self.name} says: Meow!"</span>
+
+<span class="kw">class</span> <span class="cls">Duck</span>(<span class="cls">Animal</span>):
+    <span class="kw">def</span> <span class="fn">speak</span>(<span class="prop">self</span>) -> str:
+        <span class="ret">return</span> f<span class="str">"{self.name} says: Quack!"</span>
+
+<span class="cmt"># ── THE MAGIC ─────────────────────────────────────</span>
+<span class="cmt"># One loop. One method call. Different behavior each time.</span>
+animals = [<span class="cls">Dog</span>(<span class="str">"Rex"</span>), <span class="cls">Cat</span>(<span class="str">"Whiskers"</span>), <span class="cls">Duck</span>(<span class="str">"Donald"</span>), <span class="cls">Dog</span>(<span class="str">"Buddy"</span>)]
+
+<span class="kw">for</span> animal <span class="kw">in</span> animals:
+    print(animal.speak())   <span class="cmt"># Python dispatches to right speak() at runtime</span>
+
+<span class="cmt"># Rex says: Woof!</span>
+<span class="cmt"># Whiskers says: Meow!</span>
+<span class="cmt"># Donald says: Quack!</span>
+<span class="cmt"># Buddy says: Woof!</span>
+
+<span class="cmt"># Adding a new animal requires ZERO changes to the loop — Open/Closed!</span></pre>
+          </div>
+          <div class="tips">
+            <div class="tip" style="border-color:#4a2070">
+              <span class="tip-icon">🎯</span>
+              <strong>Key moment:</strong> Ask students: "How many lines change if we add a Parrot?" (Answer: just the Parrot class.) This is the power of polymorphism.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="segment">
+      <div class="seg-header" onclick="toggleSeg(this)">
+        <div class="seg-time">0:45<br>→ 1:00</div>
+        <div class="seg-info">
+          <span class="seg-type">Python Special · 15 min</span>
+          <span class="seg-title">Duck Typing & Operator Overloading</span>
+        </div>
+        <span class="seg-toggle">▼</span>
+      </div>
+      <div class="seg-body">
+        <div class="block">
+          <div class="block-label">🦆 Duck Typing</div>
+          <div class="analogy">
+            <strong>"If it walks like a duck and quacks like a duck, it's a duck."</strong><br><br>
+            In Python, you don't need a class hierarchy for polymorphism. If an object has the right method, Python will call it — regardless of its type or parent class. This is structural typing.
+          </div>
+          <div class="code-wrap">
+            <div class="code-header"><span class="code-lang">PYTHON — Duck Typing + Operator Overloading</span><div class="code-dots"><span class="r"></span><span class="y"></span><span class="g"></span></div></div>
+            <pre><span class="cmt"># Duck typing — no inheritance needed!</span>
+<span class="kw">class</span> <span class="cls">Robot</span>:
+    <span class="kw">def</span> <span class="fn">speak</span>(<span class="prop">self</span>) -> str:
+        <span class="ret">return</span> <span class="str">"BEEP BOOP"</span>
+
+<span class="cmt"># Robot is not an Animal — but the loop doesn't care!</span>
+things = [<span class="cls">Dog</span>(<span class="str">"Rex"</span>), <span class="cls">Robot</span>()]
+<span class="kw">for</span> t <span class="kw">in</span> things:
+    print(t.speak())   <span class="cmt"># works for both — duck typing!</span>
+
+<span class="cmt"># ── OPERATOR OVERLOADING ──────────────────────────</span>
+<span class="kw">class</span> <span class="cls">Vector</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="prop">self</span>, x: float, y: float):
+        <span class="prop">self</span>.x = x
+        <span class="prop">self</span>.y = y
+
+    <span class="kw">def</span> <span class="fn">__add__</span>(<span class="prop">self</span>, other: <span class="str">'Vector'</span>) -> <span class="str">'Vector'</span>:   <span class="cmt"># v1 + v2</span>
+        <span class="ret">return</span> <span class="cls">Vector</span>(<span class="prop">self</span>.x + other.x, <span class="prop">self</span>.y + other.y)
+
+    <span class="kw">def</span> <span class="fn">__mul__</span>(<span class="prop">self</span>, scalar: float) -> <span class="str">'Vector'</span>:    <span class="cmt"># v * 3</span>
+        <span class="ret">return</span> <span class="cls">Vector</span>(<span class="prop">self</span>.x * scalar, <span class="prop">self</span>.y * scalar)
+
+    <span class="kw">def</span> <span class="fn">__eq__</span>(<span class="prop">self</span>, other) -> bool:                  <span class="cmt"># v1 == v2</span>
+        <span class="ret">return</span> <span class="prop">self</span>.x == other.x <span class="kw">and</span> <span class="prop">self</span>.y == other.y
+
+    <span class="kw">def</span> <span class="fn">__repr__</span>(<span class="prop">self</span>) -> str:
+        <span class="ret">return</span> f<span class="str">"Vector({self.x}, {self.y})"</span>
+
+v1 = <span class="cls">Vector</span>(<span class="num">1</span>, <span class="num">2</span>)
+v2 = <span class="cls">Vector</span>(<span class="num">3</span>, <span class="num">4</span>)
+print(v1 + v2)     <span class="cmt"># Vector(4, 6) — feels natural!</span>
+print(v1 * <span class="num">3</span>)     <span class="cmt"># Vector(3, 6)</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center; padding:16px; color:#aaa; font-family:var(--type-code); font-size:12px; letter-spacing:2px; border: 1px dashed var(--rule); border-radius:4px">
+      ☕ &nbsp; 10-MINUTE BREAK &nbsp; (1:00 – 1:10) &nbsp; — Suggested: Students sketch a UML diagram of a system they'll build in the lab.
+    </div>
+
+    <div class="segment">
+      <div class="seg-header" onclick="toggleSeg(this)">
+        <div class="seg-time">1:10<br>→ 1:50</div>
+        <div class="seg-info">
+          <span class="seg-type">🏆 Grand Capstone · 40 min</span>
+          <span class="seg-title">Build a Complete System Using All 4 Pillars</span>
+        </div>
+        <span class="seg-toggle">▼</span>
+      </div>
+      <div class="seg-body">
+        <div class="block">
+          <div class="block-label">🎓 Grand Lab Exercise — All 4 Pillars Together</div>
+          <div class="exercise">
+            <strong>Exercise: University Course Registration System</strong><br>
+            <em style="font-size:13px;color:#777">Build this step by step — each step requires a different pillar.</em>
+            <ol class="ex-steps" style="margin-top:14px">
+              <li><strong>[Encapsulation]</strong> Create a <code>Course</code> class: private <code>_students</code> list, private <code>_capacity</code>. Add <code>enroll(student)</code> with validation, <code>get_enrollment_count()</code>.</li>
+              <li><strong>[Abstraction]</strong> Create an abstract <code>Person</code> base with abstract <code>get_role()</code> and concrete <code>get_id_card()</code> method.</li>
+              <li><strong>[Inheritance]</strong> Create <code>Student(Person)</code> with <code>student_id</code>, <code>courses</code> list, <code>enroll_in(course)</code>. Create <code>Professor(Person)</code> with <code>courses_teaching</code>, <code>assign_to(course)</code>.</li>
+              <li><strong>[Polymorphism]</strong> Create a <code>Registrar</code> class that holds a list of <code>Person</code> objects and can call <code>get_role()</code> on each — without knowing if they're a Student or Professor.</li>
+              <li><strong>Operator overloading:</strong> Override <code>__str__</code> on all classes for clean printing. Override <code>__len__</code> on Course to return enrollment count.</li>
+              <li><strong>Final test:</strong> Create 2 professors, 5 students, 3 courses. Enroll students. Print the registrar's full roster using a single polymorphic loop.</li>
+            </ol>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-label">📐 Reference — All 4 Pillars in One View</div>
+          <div class="concept-cards">
+            <div class="concept-card" style="border-color:#1a3a5c; background:rgba(26,58,92,0.05)">
+              <div class="concept-name" style="color:#1a3a5c">Encapsulation</div>
+              <code>Course._students</code> is private. Only <code>enroll()</code> can add, with validation. You can't corrupt the list directly.
+            </div>
+            <div class="concept-card" style="border-color:#2d6a2d; background:rgba(45,106,45,0.05)">
+              <div class="concept-name" style="color:#2d6a2d">Abstraction</div>
+              <code>Person</code> defines <code>get_role()</code> as a contract. <code>Registrar</code> doesn't know the concrete type — it only knows the interface.
+            </div>
+            <div class="concept-card" style="border-color:#7a1f1f; background:rgba(122,31,31,0.05)">
+              <div class="concept-name" style="color:#7a1f1f">Inheritance</div>
+              <code>Student</code> and <code>Professor</code> inherit from <code>Person</code> — they get <code>get_id_card()</code> for free and override <code>get_role()</code>.
+            </div>
+            <div class="concept-card" style="border-color:#4a2070; background:rgba(74,32,112,0.05)">
+              <div class="concept-name" style="color:#4a2070">Polymorphism</div>
+              The registrar loop calls <code>person.get_role()</code> — for each person, the right implementation runs automatically.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="segment">
+      <div class="seg-header" onclick="toggleSeg(this)">
+        <div class="seg-time">1:50<br>→ 2:00</div>
+        <div class="seg-info">
+          <span class="seg-type">🎓 Course Synthesis · 10 min</span>
+          <span class="seg-title">The Unified Theory of OOP — What You've Learned</span>
+        </div>
+        <span class="seg-toggle">▼</span>
+      </div>
+      <div class="seg-body">
+        <div class="block">
+          <div class="block-label">🏛 The Four Pillars — Final Summary</div>
+          <div class="tips">
+            <div class="tip" style="border-color:#1a3a5c">
+              <span class="tip-icon">I</span>
+              <strong>Encapsulation</strong> — Protect. Bundle data with its behavior. Control access. Validate at the boundary.
+            </div>
+            <div class="tip" style="border-color:#2d6a2d">
+              <span class="tip-icon">II</span>
+              <strong>Abstraction</strong> — Simplify. Define contracts. Hide complexity. Program to interfaces.
+            </div>
+            <div class="tip" style="border-color:#7a1f1f">
+              <span class="tip-icon">III</span>
+              <strong>Inheritance</strong> — Reuse. Build on existing classes. Override what differs. Respect LSP.
+            </div>
+            <div class="tip" style="border-color:#4a2070">
+              <span class="tip-icon">IV</span>
+              <strong>Polymorphism</strong> — Extend. One interface, many behaviors. Add without modifying. Open/Closed.
+            </div>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-label">📝 Final Assessment Ideas</div>
+          <div class="assessment-grid">
+            <div class="assess-card">
+              <div class="assess-type">Written Exam Question</div>
+              <div class="assess-text">Design a Library Management System. Identify which pillar you'd use for each decision and justify why.</div>
+            </div>
+            <div class="assess-card">
+              <div class="assess-type">Coding Assignment</div>
+              <div class="assess-text">Extend the Course Registration System with a <code>GradeCalculator</code> that works polymorphically across <code>UndergradCourse</code> and <code>GradCourse</code>.</div>
+            </div>
+            <div class="assess-card">
+              <div class="assess-type">Design Review</div>
+              <div class="assess-text">Given 200 lines of procedural Python, identify opportunities for each pillar and refactor into OOP.</div>
+            </div>
+            <div class="assess-card">
+              <div class="assess-type">Presentation</div>
+              <div class="assess-text">Present a real-world API or framework (Django ORM, Java Collections) and explain which OOP pillars it uses and where.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="day-summary">
+    <div>
+      <div class="summary-col-title">Key Takeaways — Day 4</div>
+      <ul class="summary-list">
+        <li>Polymorphism: same interface, different behavior</li>
+        <li>Runtime dispatch: Python chooses method at execution time</li>
+        <li>Duck typing: type doesn't matter, behavior does</li>
+        <li>Operator overloading makes custom types feel native</li>
+        <li>Open/Closed: open for extension, closed for modification</li>
+      </ul>
+    </div>
+    <div>
+      <div class="summary-col-title">Full Course Vocabulary</div>
+      <ul class="summary-list">
+        <li>Encapsulation · Abstraction · Inheritance · Polymorphism</li>
+        <li>Runtime / Compile-time polymorphism</li>
+        <li>Duck typing · Operator overloading · Dunder methods</li>
+        <li>LSP · Open/Closed · Tell-Don't-Ask principles</li>
+        <li>Composition vs Inheritance · Abstract class · Interface</li>
+      </ul>
+    </div>
+  </div>
+
+</div><!-- /day-3 -->
+</div><!-- /content-area -->
+
+<div class="footer">
+  4-Day OOP Lecture Course &nbsp;·&nbsp; Designed for University-Level CS &nbsp;·&nbsp; 2 hrs × 4 days &nbsp;·&nbsp; Python + Java
+</div>
+
+<script>
+  function switchDay(idx) {
+    document.querySelectorAll('.day-panel').forEach((p,i) => {
+      p.classList.toggle('active', i === idx);
+    });
+    document.querySelectorAll('.pillar-tab').forEach((t,i) => {
+      t.classList.toggle('active', i === idx);
+    });
+  }
+
+  function toggleSeg(header) {
+    const seg = header.closest('.segment');
+    seg.classList.toggle('open');
+  }
+
+  function expandAll(dayIdx) {
+    const panel = document.getElementById('day-' + dayIdx);
+    panel.querySelectorAll('.segment').forEach(s => s.classList.add('open'));
+  }
+</script>
+</body>
+</html>

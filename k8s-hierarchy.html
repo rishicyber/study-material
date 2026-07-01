@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kubernetes Architecture Hierarchy</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;700;800&display=swap');
+
+  :root {
+    --bg: #080c14;
+    --grid: #0f1624;
+    --cluster-bg: #0b1526;
+    --cluster-border: #1e3a5f;
+    --node-bg: #0e1e35;
+    --node-border: #1a4a7a;
+    --pod-bg: #0a1929;
+    --pod-border: #1565c0;
+    --container-bg: #071320;
+    --container-border: #0d47a1;
+    --svc-bg: #1a0a29;
+    --svc-border: #6a1b9a;
+    --ingress-bg: #0a1f0a;
+    --ingress-border: #2e7d32;
+    --ns-bg: #1a1a0a;
+    --ns-border: #f57f17;
+    --text: #e8f4fd;
+    --text-dim: #7ba7c2;
+    --text-muted: #3d6680;
+    --accent-blue: #4fc3f7;
+    --accent-purple: #ce93d8;
+    --accent-green: #81c784;
+    --accent-orange: #ffb74d;
+    --accent-pink: #f48fb1;
+    --glow-blue: rgba(79,195,247,0.15);
+    --glow-purple: rgba(206,147,216,0.15);
+    --glow-green: rgba(129,199,132,0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: auto;
+    background-image:
+      linear-gradient(rgba(79,195,247,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(79,195,247,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  header {
+    text-align: center;
+    padding: 32px 20px 16px;
+    position: relative;
+  }
+
+  header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1.4rem, 3vw, 2.2rem);
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  header p {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    margin-top: 6px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    padding: 12px 20px 24px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+  }
+
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    border: 1.5px solid;
+  }
+
+  .canvas {
+    padding: 0 20px 40px;
+    display: flex;
+    justify-content: center;
+  }
+
+  /* ── CLUSTER ─────────────────────────────── */
+  .cluster {
+    border: 1.5px solid var(--cluster-border);
+    border-radius: 16px;
+    background: var(--cluster-bg);
+    padding: 20px;
+    width: 100%;
+    max-width: 1060px;
+    box-shadow: 0 0 60px rgba(30,58,95,0.4), inset 0 0 40px rgba(11,21,38,0.6);
+    position: relative;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .cluster::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(79,195,247,0.08), transparent 50%, rgba(206,147,216,0.05));
+    pointer-events: none;
+  }
+
+  /* ── LAYER LABELS ────────────────────────── */
+  .layer-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 10px;
+  }
+
+  .lbl-cluster { color: var(--accent-blue); background: rgba(79,195,247,0.08); border: 1px solid rgba(79,195,247,0.2); }
+  .lbl-ns      { color: var(--accent-orange); background: rgba(245,127,23,0.08); border: 1px solid rgba(245,127,23,0.2); }
+  .lbl-node    { color: var(--accent-blue); background: rgba(79,195,247,0.06); border: 1px solid rgba(79,195,247,0.15); }
+  .lbl-pod     { color: var(--accent-pink); background: rgba(244,143,177,0.07); border: 1px solid rgba(244,143,177,0.2); }
+  .lbl-svc     { color: var(--accent-purple); background: rgba(206,147,216,0.08); border: 1px solid rgba(206,147,216,0.2); }
+  .lbl-ingress { color: var(--accent-green); background: rgba(129,199,132,0.08); border: 1px solid rgba(129,199,132,0.2); }
+  .lbl-cp      { color: #90caf9; background: rgba(144,202,249,0.07); border: 1px solid rgba(144,202,249,0.18); }
+
+  /* ── CONTROL PLANE ───────────────────────── */
+  .control-plane {
+    border: 1px solid rgba(144,202,249,0.25);
+    border-radius: 10px;
+    background: rgba(13,27,52,0.7);
+    padding: 14px;
+    margin-bottom: 16px;
+    position: relative;
+  }
+
+  .cp-components {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .cp-box {
+    background: rgba(10,20,40,0.8);
+    border: 1px solid rgba(144,202,249,0.18);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.7rem;
+    color: #90caf9;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .cp-box .cp-name {
+    font-weight: 700;
+    font-size: 0.72rem;
+    color: #bbdefb;
+  }
+
+  .cp-box .cp-desc {
+    color: #546e8a;
+    font-size: 0.62rem;
+    line-height: 1.4;
+  }
+
+  /* ── INGRESS ─────────────────────────────── */
+  .ingress-row {
+    margin-bottom: 16px;
+  }
+
+  .ingress-box {
+    border: 1px solid var(--ingress-border);
+    border-radius: 8px;
+    background: var(--ingress-bg);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 0 12px rgba(46,125,50,0.12);
+  }
+
+  .ingress-icon { font-size: 1.4rem; }
+  .ingress-text { flex: 1; }
+  .ingress-text .name { font-weight: 700; font-size: 0.8rem; color: var(--accent-green); }
+  .ingress-text .desc { font-size: 0.65rem; color: #4a7a4a; margin-top: 2px; }
+
+  .ingress-rules {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .rule-tag {
+    background: rgba(46,125,50,0.12);
+    border: 1px solid rgba(46,125,50,0.3);
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 0.62rem;
+    color: #66bb6a;
+  }
+
+  /* ── NAMESPACE ───────────────────────────── */
+  .namespace {
+    border: 1.5px dashed rgba(245,127,23,0.35);
+    border-radius: 12px;
+    background: rgba(20,17,5,0.4);
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+
+  /* ── SERVICE ROW ─────────────────────────── */
+  .service-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .service-card {
+    border: 1px solid var(--svc-border);
+    border-radius: 8px;
+    background: var(--svc-bg);
+    padding: 10px 14px;
+    flex: 1;
+    min-width: 180px;
+    box-shadow: 0 0 14px rgba(106,27,154,0.1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .service-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--svc-border), transparent);
+  }
+
+  .svc-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .svc-icon { font-size: 1rem; }
+  .svc-name { font-weight: 700; font-size: 0.75rem; color: var(--accent-purple); }
+  .svc-type-badge {
+    margin-left: auto;
+    font-size: 0.58rem;
+    background: rgba(106,27,154,0.25);
+    border: 1px solid rgba(106,27,154,0.4);
+    border-radius: 3px;
+    padding: 1px 6px;
+    color: #ab47bc;
+  }
+
+  .svc-detail { font-size: 0.62rem; color: #6a456e; margin-top: 2px; }
+  .svc-selector {
+    margin-top: 6px;
+    font-size: 0.62rem;
+    color: #7b5584;
+    background: rgba(106,27,154,0.08);
+    border-radius: 3px;
+    padding: 3px 6px;
+  }
+
+  /* ── NODES GRID ──────────────────────────── */
+  .nodes-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .node {
+    border: 1px solid var(--node-border);
+    border-radius: 10px;
+    background: var(--node-bg);
+    padding: 12px;
+    flex: 1;
+    min-width: 280px;
+    box-shadow: 0 0 18px rgba(26,74,122,0.15);
+    position: relative;
+  }
+
+  .node-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(26,74,122,0.3);
+  }
+
+  .node-icon { font-size: 1.1rem; }
+  .node-name { font-weight: 700; font-size: 0.78rem; color: var(--accent-blue); }
+
+  .node-meta {
+    margin-left: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+  }
+
+  .node-status {
+    font-size: 0.6rem;
+    color: var(--accent-green);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    box-shadow: 0 0 6px var(--accent-green);
+    animation: pulse 2s ease infinite;
+  }
+
+  .node-info { font-size: 0.6rem; color: #3d6680; }
+
+  /* ── PODS ────────────────────────────────── */
+  .pods-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .pod {
+    border: 1px solid var(--pod-border);
+    border-radius: 7px;
+    background: var(--pod-bg);
+    padding: 9px 11px;
+    position: relative;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+  }
+
+  .pod:hover {
+    box-shadow: 0 0 16px rgba(21,101,192,0.3);
+  }
+
+  .pod::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent-blue);
+    opacity: 0.6;
+  }
+
+  .pod-header {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 7px;
+  }
+
+  .pod-icon { font-size: 0.95rem; }
+  .pod-name { font-weight: 700; font-size: 0.72rem; color: var(--accent-pink); }
+
+  .pod-ip {
+    margin-left: auto;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    background: rgba(21,101,192,0.1);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+
+  /* ── CONTAINERS ──────────────────────────── */
+  .containers {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .container {
+    border: 1px solid var(--container-border);
+    border-radius: 4px;
+    background: var(--container-bg);
+    padding: 5px 9px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .container-icon { font-size: 0.8rem; opacity: 0.8; }
+  .container-name { font-size: 0.65rem; color: #5c8fc2; font-weight: 600; flex: 1; }
+  .container-port {
+    font-size: 0.6rem;
+    color: #2a5a8a;
+    background: rgba(13,71,161,0.15);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  .container-image {
+    font-size: 0.58rem;
+    color: #2a4a6a;
+    margin-left: auto;
+  }
+
+  /* ── VOLUMES / LABELS ────────────────────── */
+  .pod-footer {
+    display: flex;
+    gap: 5px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    font-size: 0.58rem;
+    padding: 1px 6px;
+    border-radius: 3px;
+    border: 1px solid;
+  }
+
+  .tag-label { color: #5a8a5a; border-color: rgba(90,138,90,0.3); background: rgba(90,138,90,0.08); }
+  .tag-volume { color: #8a7a5a; border-color: rgba(138,122,90,0.3); background: rgba(138,122,90,0.08); }
+  .tag-sa    { color: #5a7a8a; border-color: rgba(90,122,138,0.3); background: rgba(90,122,138,0.08); }
+
+  /* ── ARROWS ──────────────────────────────── */
+  .arrow-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    color: var(--text-muted);
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+  }
+
+  .arrow-line {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .arrow-line svg { opacity: 0.4; }
+
+  /* ── ANIMATIONS ──────────────────────────── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .cluster { animation-delay: 0s; }
+
+  /* ── FLOW CONNECTOR SVG ──────────────────── */
+  .flow-svg {
+    width: 100%;
+    height: 36px;
+    display: block;
+    margin: 4px 0;
+    overflow: visible;
+  }
+
+  /* ── ETCD / KUBELET / KUBE-PROXY ─────────── */
+  .node-agents {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(26,74,122,0.2);
+  }
+
+  .agent-tag {
+    font-size: 0.58rem;
+    padding: 2px 7px;
+    border-radius: 3px;
+    background: rgba(21,101,192,0.1);
+    border: 1px solid rgba(21,101,192,0.2);
+    color: #4a7ab5;
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .cp-components { flex-direction: column; }
+    .nodes-grid { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Kubernetes Cluster Hierarchy</h1>
+  <p>Pod · Node · Service · Ingress · Namespace · Control Plane</p>
+</header>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:rgba(144,202,249,0.2);border-color:#90caf9"></div>Control Plane</div>
+  <div class="legend-item"><div class="legend-dot" style="background:rgba(245,127,23,0.1);border-color:#f57f17"></div>Namespace</div>
+  <div class="legend-item"><div class="legend-dot" style="background:rgba(79,195,247,0.1);border-color:#4fc3f7"></div>Node</div>
+  <div class="legend-item"><div class="legend-dot" style="background:rgba(244,143,177,0.1);border-color:#f48fb1"></div>Pod</div>
+  <div class="legend-item"><div class="legend-dot" style="background:rgba(13,71,161,0.2);border-color:#0d47a1"></div>Container</div>
+  <div class="legend-item"><div class="legend-dot" style="background:rgba(106,27,154,0.15);border-color:#6a1b9a"></div>Service</div>
+  <div class="legend-item"><div class="legend-dot" style="background:rgba(46,125,50,0.1);border-color:#2e7d32"></div>Ingress</div>
+</div>
+
+<div class="canvas">
+<div class="cluster">
+
+  <!-- CLUSTER LABEL -->
+  <div class="layer-label lbl-cluster">⬡ cluster: production-k8s</div>
+
+  <!-- CONTROL PLANE -->
+  <div class="control-plane">
+    <div class="layer-label lbl-cp">⚙ Control Plane</div>
+    <div class="cp-components">
+      <div class="cp-box">
+        <span class="cp-name">🧠 API Server</span>
+        <span class="cp-desc">Central hub — all kubectl & internal<br>communication routes through here</span>
+      </div>
+      <div class="cp-box">
+        <span class="cp-name">📦 etcd</span>
+        <span class="cp-desc">Distributed key-value store.<br>Source of truth for cluster state</span>
+      </div>
+      <div class="cp-box">
+        <span class="cp-name">🔄 Scheduler</span>
+        <span class="cp-desc">Assigns pods to nodes based<br>on resources & constraints</span>
+      </div>
+      <div class="cp-box">
+        <span class="cp-name">🎛 Controller Mgr</span>
+        <span class="cp-desc">Runs reconciliation loops:<br>ReplicaSet, Deployment, etc.</span>
+      </div>
+      <div class="cp-box">
+        <span class="cp-name">☁ Cloud Controller</span>
+        <span class="cp-desc">Integrates with cloud provider<br>for LBs, storage, nodes</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARROW DOWN -->
+  <div class="arrow-row">
+    <svg width="400" height="24" class="flow-svg" viewBox="0 0 400 24">
+      <defs>
+        <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="rgba(79,195,247,0.35)"/>
+        </marker>
+      </defs>
+      <line x1="200" y1="0" x2="200" y2="20" stroke="rgba(79,195,247,0.25)" stroke-width="1.5" marker-end="url(#arr)" stroke-dasharray="4,3"/>
+    </svg>
+  </div>
+
+  <!-- INGRESS -->
+  <div class="ingress-row">
+    <div class="layer-label lbl-ingress">↗ Ingress Controller</div>
+    <div class="ingress-box">
+      <div class="ingress-icon">🌐</div>
+      <div class="ingress-text">
+        <div class="name">nginx-ingress  <span style="color:#3a6a3a;font-size:0.62rem">/ NGINX Ingress Controller</span></div>
+        <div class="desc">Routes external HTTP/S traffic → Services · TLS termination · Host &amp; path-based routing</div>
+      </div>
+      <div class="ingress-rules">
+        <span class="rule-tag">app.example.com/api → svc:api-service:80</span>
+        <span class="rule-tag">app.example.com/web → svc:frontend-service:80</span>
+        <span class="rule-tag">TLS: secret/tls-cert</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARROW DOWN -->
+  <div class="arrow-row">
+    <svg width="400" height="24" class="flow-svg" viewBox="0 0 400 24">
+      <line x1="200" y1="0" x2="200" y2="20" stroke="rgba(206,147,216,0.3)" stroke-width="1.5" marker-end="url(#arr)" stroke-dasharray="4,3"/>
+    </svg>
+  </div>
+
+  <!-- NAMESPACE -->
+  <div class="namespace">
+    <div class="layer-label lbl-ns">◧ Namespace: production</div>
+
+    <!-- SERVICES -->
+    <div class="layer-label lbl-svc" style="margin-top:4px">⬡ Services</div>
+    <div class="service-row">
+
+      <div class="service-card">
+        <div class="svc-header">
+          <span class="svc-icon">🔀</span>
+          <span class="svc-name">frontend-service</span>
+          <span class="svc-type-badge">ClusterIP</span>
+        </div>
+        <div class="svc-detail">Port 80 → 3000 &nbsp;|&nbsp; Protocol: TCP</div>
+        <div class="svc-selector">selector: app=frontend, tier=web</div>
+      </div>
+
+      <div class="service-card">
+        <div class="svc-header">
+          <span class="svc-icon">🔀</span>
+          <span class="svc-name">api-service</span>
+          <span class="svc-type-badge">ClusterIP</span>
+        </div>
+        <div class="svc-detail">Port 80 → 8080 &nbsp;|&nbsp; Protocol: TCP</div>
+        <div class="svc-selector">selector: app=api, tier=backend</div>
+      </div>
+
+      <div class="service-card">
+        <div class="svc-header">
+          <span class="svc-icon">🔀</span>
+          <span class="svc-name">db-service</span>
+          <span class="svc-type-badge">ClusterIP</span>
+        </div>
+        <div class="svc-detail">Port 5432 → 5432 &nbsp;|&nbsp; Protocol: TCP</div>
+        <div class="svc-selector">selector: app=postgres, tier=db</div>
+      </div>
+
+      <div class="service-card">
+        <div class="svc-header">
+          <span class="svc-icon">🔀</span>
+          <span class="svc-name">metrics-service</span>
+          <span class="svc-type-badge">NodePort</span>
+        </div>
+        <div class="svc-detail">Port 9090 → 9090 &nbsp;|&nbsp; NodePort: 32090</div>
+        <div class="svc-selector">selector: app=prometheus</div>
+      </div>
+
+    </div>
+
+    <!-- ARROW DOWN -->
+    <div class="arrow-row">
+      <svg width="400" height="24" class="flow-svg" viewBox="0 0 400 24">
+        <line x1="200" y1="0" x2="200" y2="20" stroke="rgba(244,143,177,0.3)" stroke-width="1.5" marker-end="url(#arr)" stroke-dasharray="4,3"/>
+      </svg>
+    </div>
+
+    <!-- NODES -->
+    <div class="layer-label lbl-node">▣ Worker Nodes</div>
+    <div class="nodes-grid">
+
+      <!-- NODE 1 -->
+      <div class="node">
+        <div class="node-header">
+          <span class="node-icon">🖥</span>
+          <span class="node-name">node-1 / worker-01</span>
+          <div class="node-meta">
+            <span class="node-status"><span class="status-dot"></span>Ready</span>
+            <span class="node-info">4 CPU · 16 GB RAM</span>
+          </div>
+        </div>
+
+        <div class="layer-label lbl-pod" style="font-size:0.58rem">⬡ Pods</div>
+        <div class="pods-grid">
+
+          <!-- POD: frontend -->
+          <div class="pod">
+            <div class="pod-header">
+              <span class="pod-icon">📦</span>
+              <span class="pod-name">frontend-deployment-6d4b9f-xkq2p</span>
+              <span class="pod-ip">10.244.1.12</span>
+            </div>
+            <div class="containers">
+              <div class="container">
+                <span class="container-icon">📋</span>
+                <span class="container-name">frontend</span>
+                <span class="container-port">:3000</span>
+                <span class="container-image">node:18-alpine</span>
+              </div>
+              <div class="container">
+                <span class="container-icon">📋</span>
+                <span class="container-name">nginx-sidecar</span>
+                <span class="container-port">:80</span>
+                <span class="container-image">nginx:1.25</span>
+              </div>
+            </div>
+            <div class="pod-footer">
+              <span class="tag tag-label">app=frontend</span>
+              <span class="tag tag-label">tier=web</span>
+              <span class="tag tag-volume">vol: config-map</span>
+              <span class="tag tag-sa">sa: default</span>
+            </div>
+          </div>
+
+          <!-- POD: api -->
+          <div class="pod">
+            <div class="pod-header">
+              <span class="pod-icon">📦</span>
+              <span class="pod-name">api-deployment-7f8c4b-mnr7s</span>
+              <span class="pod-ip">10.244.1.23</span>
+            </div>
+            <div class="containers">
+              <div class="container">
+                <span class="container-icon">📋</span>
+                <span class="container-name">api-server</span>
+                <span class="container-port">:8080</span>
+                <span class="container-image">python:3.11-slim</span>
+              </div>
+              <div class="container">
+                <span class="container-icon">📋</span>
+                <span class="container-name">envoy-proxy</span>
+                <span class="container-port">:15001</span>
+                <span class="container-image">envoy:v1.28</span>
+              </div>
+            </div>
+            <div class="pod-footer">
+              <span class="tag tag-label">app=api</span>
+              <span class="tag tag-label">tier=backend</span>
+              <span class="tag tag-volume">vol: secret/api-keys</span>
+              <span class="tag tag-sa">sa: api-sa</span>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="node-agents">
+          <span class="agent-tag">kubelet</span>
+          <span class="agent-tag">kube-proxy</span>
+          <span class="agent-tag">container-runtime: containerd</span>
+        </div>
+      </div>
+
+      <!-- NODE 2 -->
+      <div class="node">
+        <div class="node-header">
+          <span class="node-icon">🖥</span>
+          <span class="node-name">node-2 / worker-02</span>
+          <div class="node-meta">
+            <span class="node-status"><span class="status-dot"></span>Ready</span>
+            <span class="node-info">8 CPU · 32 GB RAM</span>
+          </div>
+        </div>
+
+        <div class="layer-label lbl-pod" style="font-size:0.58rem">⬡ Pods</div>
+        <div class="pods-grid">
+
+          <!-- POD: postgres -->
+          <div class="pod">
+            <div class="pod-header">
+              <span class="pod-icon">📦</span>
+              <span class="pod-name">postgres-statefulset-0</span>
+              <span class="pod-ip">10.244.2.5</span>
+            </div>
+            <div class="containers">
+              <div class="container">
+                <span class="container-icon">📋</span>
+                <span class="container-name">postgres</span>
+                <span class="container-port">:5432</span>
+                <span class="container-image">postgres:16</span>
+              </div>
+              <div class="container">
+                <span class="container-icon">📋</span>
+                <span class="container-name">pg-exporter</span>
+                <span class="container-port">:9187</span>
+                <span class="container-image">postgres-exporter</span>
+              </div>
+            </div>
+            <div class="pod-footer">
+              <span class="tag tag-label">app=postgres</span>
+              <span class="tag tag-label">tier=db</span>
+              <span class="tag tag-volume">vol: pvc/postgres-data</span>
+              <span class="tag tag-sa">sa: db-sa</span>
+            </div>
+          </div>
+
+          <!-- POD: prometheus -->
+          <div class="pod">
+            <div class="pod-header">
+              <span class="pod-icon">📦</span>
+              <span class="pod-name">prometheus-deployment-8a7d-pz91k</span>
+              <span class="pod-ip">10.244.2.18</span>
+            </div>
+            <div class="containers">
+              <div class="container">
+                <span class="container-icon">📋</span>
+                <span class="container-name">prometheus</span>
+                <span class="container-port">:9090</span>
+                <span class="container-image">prom/prometheus:v2.48</span>
+              </div>
+            </div>
+            <div class="pod-footer">
+              <span class="tag tag-label">app=prometheus</span>
+              <span class="tag tag-volume">vol: pvc/metrics-data</span>
+              <span class="tag tag-sa">sa: monitoring-sa</span>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="node-agents">
+          <span class="agent-tag">kubelet</span>
+          <span class="agent-tag">kube-proxy</span>
+          <span class="agent-tag">container-runtime: containerd</span>
+        </div>
+      </div>
+
+    </div><!-- /nodes-grid -->
+
+  </div><!-- /namespace -->
+
+</div><!-- /cluster -->
+</div><!-- /canvas -->
+
+</body>
+</html>

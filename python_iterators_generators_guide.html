@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python Iterators & Generators — Interview Master Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #7c6af7;
+    --accent2: #e05c5c;
+    --accent3: #3ecf8e;
+    --accent4: #f59e0b;
+    --text: #e2e0f0;
+    --muted: #7a789a;
+    --code-bg: #0d0d18;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,106,247,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,106,247,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 6rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* HEADER */
+  header {
+    text-align: center;
+    padding: 4rem 0 3rem;
+    position: relative;
+  }
+
+  .badge {
+    display: inline-block;
+    background: rgba(124,106,247,0.15);
+    border: 1px solid rgba(124,106,247,0.4);
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    padding: 0.3rem 0.9rem;
+    border-radius: 2px;
+    margin-bottom: 1.5rem;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #fff 0%, var(--accent) 60%, #e05c5c 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 1rem;
+    font-weight: 400;
+  }
+
+  /* TABLE OF CONTENTS */
+  .toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    padding: 1.5rem 2rem;
+    margin: 2rem 0 3rem;
+  }
+
+  .toc-title {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 1rem;
+  }
+
+  .toc ol {
+    padding-left: 1.2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.3rem 2rem;
+  }
+
+  .toc a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.88rem;
+    transition: color 0.2s;
+  }
+
+  .toc a:hover { color: var(--accent); }
+
+  /* SECTIONS */
+  .section {
+    margin-bottom: 3.5rem;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    background: rgba(124,106,247,0.1);
+    border: 1px solid rgba(124,106,247,0.3);
+    padding: 0.2rem 0.5rem;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+
+  h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin: 1.5rem 0 0.6rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  p { margin-bottom: 0.8rem; color: var(--text); font-size: 0.95rem; }
+
+  /* CODE BLOCKS */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.2rem 1.4rem;
+    overflow-x: auto;
+    margin: 1rem 0 1.2rem;
+    position: relative;
+  }
+
+  pre::before {
+    content: attr(data-lang);
+    position: absolute;
+    top: 0.5rem;
+    right: 0.8rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.7;
+  }
+
+  p code, li code {
+    background: rgba(124,106,247,0.12);
+    border: 1px solid rgba(124,106,247,0.25);
+    color: #c4b8ff;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.82rem;
+  }
+
+  /* Syntax highlighting */
+  .kw { color: #c792ea; }
+  .fn { color: #82aaff; }
+  .str { color: #c3e88d; }
+  .cm { color: #546e7a; font-style: italic; }
+  .num { color: #f78c6c; }
+  .bi { color: #ffcb6b; }
+  .op { color: #89ddff; }
+  .dec { color: #f59e0b; }
+
+  /* CALLOUT BOXES */
+  .callout {
+    border-radius: 4px;
+    padding: 1rem 1.2rem;
+    margin: 1.2rem 0;
+    font-size: 0.9rem;
+    border-left: 3px solid;
+  }
+
+  .callout.tip { background: rgba(62,207,142,0.08); border-color: var(--accent3); }
+  .callout.warn { background: rgba(245,158,11,0.08); border-color: var(--accent4); }
+  .callout.danger { background: rgba(224,92,92,0.08); border-color: var(--accent2); }
+  .callout.info { background: rgba(124,106,247,0.08); border-color: var(--accent); }
+
+  .callout-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+  }
+
+  .callout.tip .callout-label { color: var(--accent3); }
+  .callout.warn .callout-label { color: var(--accent4); }
+  .callout.danger .callout-label { color: var(--accent2); }
+  .callout.info .callout-label { color: var(--accent); }
+
+  /* COMPARISON TABLE */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin: 1rem 0;
+  }
+
+  th {
+    background: var(--surface2);
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.7rem 1rem;
+    text-align: left;
+    border: 1px solid var(--border);
+  }
+
+  td {
+    padding: 0.65rem 1rem;
+    border: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+
+  tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+
+  /* QUIZ BOX */
+  .quiz {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1.3rem 1.5rem;
+    margin: 1.5rem 0;
+  }
+
+  .quiz-q {
+    font-weight: 600;
+    color: #fff;
+    font-size: 0.9rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .quiz-q::before {
+    content: 'Q: ';
+    color: var(--accent2);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+  }
+
+  details summary {
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-family: 'JetBrains Mono', monospace;
+    user-select: none;
+    padding: 0.4rem 0;
+    outline: none;
+  }
+
+  details summary:hover { color: var(--accent); }
+  details[open] summary { color: var(--accent3); margin-bottom: 0.8rem; }
+
+  .answer {
+    background: rgba(62,207,142,0.06);
+    border-left: 2px solid var(--accent3);
+    padding: 0.8rem 1rem;
+    font-size: 0.88rem;
+    border-radius: 0 4px 4px 0;
+  }
+
+  ul, ol { padding-left: 1.4rem; margin-bottom: 0.8rem; }
+  li { margin-bottom: 0.3rem; font-size: 0.92rem; }
+
+  /* MEMORY AIDS */
+  .mental-model {
+    background: linear-gradient(135deg, rgba(124,106,247,0.06), rgba(62,207,142,0.04));
+    border: 1px solid rgba(124,106,247,0.2);
+    border-radius: 6px;
+    padding: 1.2rem 1.4rem;
+    margin: 1.2rem 0;
+    font-size: 0.88rem;
+  }
+
+  .mental-model-title {
+    color: var(--accent4);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  /* DIVIDER */
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+    margin: 3rem 0;
+  }
+
+  @media (max-width: 600px) {
+    .toc ol { grid-template-columns: 1fr; }
+    h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <div class="badge">Interview Prep · Python Internals</div>
+  <h1>Iterators, Iterables &amp; Generators</h1>
+  <p class="subtitle">The exhaustive guide to never getting tripped up again</p>
+</header>
+
+<nav class="toc">
+  <div class="toc-title">// Contents</div>
+  <ol>
+    <li><a href="#iteration-protocol">The Iteration Protocol</a></li>
+    <li><a href="#iterables-vs-iterators">Iterables vs Iterators</a></li>
+    <li><a href="#custom-iterators">Custom Iterators</a></li>
+    <li><a href="#generators">Generator Functions</a></li>
+    <li><a href="#generator-expressions">Generator Expressions</a></li>
+    <li><a href="#yield-from">yield from</a></li>
+    <li><a href="#send-throw-close">send / throw / close</a></li>
+    <li><a href="#coroutines">Coroutines &amp; async</a></li>
+    <li><a href="#itertools">itertools Deep Dive</a></li>
+    <li><a href="#gotchas">Gotchas &amp; Traps</a></li>
+    <li><a href="#memory">Memory &amp; Performance</a></li>
+    <li><a href="#interview-qs">Interview Questions</a></li>
+  </ol>
+</nav>
+
+<!-- ═══════════════════════════ SECTION 1 ═══════════════════════════ -->
+<div class="section" id="iteration-protocol">
+  <div class="section-header">
+    <span class="section-num">01</span>
+    <h2>The Iteration Protocol</h2>
+  </div>
+
+  <p>Python's <code>for</code> loop isn't magic — it's a strict protocol. Understanding this protocol is the foundation of everything that follows.</p>
+
+  <p>When you write <code>for x in obj:</code>, Python does exactly this under the hood:</p>
+
+  <pre data-lang="python"><code><span class="cm"># What Python's for-loop actually does:</span>
+<span class="bi">iter_obj</span> = <span class="bi">iter</span>(obj)          <span class="cm"># calls obj.__iter__()</span>
+<span class="kw">while</span> <span class="kw">True</span>:
+    <span class="kw">try</span>:
+        x = <span class="bi">next</span>(iter_obj)   <span class="cm"># calls iter_obj.__next__()</span>
+    <span class="kw">except</span> <span class="bi">StopIteration</span>:
+        <span class="kw">break</span>               <span class="cm"># loop ends cleanly</span>
+    <span class="cm"># loop body runs here with x</span></code></pre>
+
+  <div class="callout info">
+    <div class="callout-label">Key Insight</div>
+    <code>StopIteration</code> is not an error — it is the agreed-upon signal that iteration is complete. The <code>for</code> loop silently catches it.
+  </div>
+
+  <h3>The Two Magic Methods</h3>
+  <table>
+    <tr><th>Method</th><th>Called by</th><th>Must return</th><th>Purpose</th></tr>
+    <tr><td><code>__iter__()</code></td><td><code>iter(obj)</code></td><td>An iterator object</td><td>Get an iterator from the object</td></tr>
+    <tr><td><code>__next__()</code></td><td><code>next(obj)</code></td><td>Next value, or raise <code>StopIteration</code></td><td>Produce the next item</td></tr>
+  </table>
+</div>
+
+<!-- ═══════════════════════════ SECTION 2 ═══════════════════════════ -->
+<div class="section" id="iterables-vs-iterators">
+  <div class="section-header">
+    <span class="section-num">02</span>
+    <h2>Iterables vs Iterators — The Critical Distinction</h2>
+  </div>
+
+  <p>This is the #1 confusion point in interviews. They are <strong>not the same thing</strong>.</p>
+
+  <table>
+    <tr><th></th><th>Iterable</th><th>Iterator</th></tr>
+    <tr><td><strong>Definition</strong></td><td>Has <code>__iter__()</code> method</td><td>Has both <code>__iter__()</code> and <code>__next__()</code></td></tr>
+    <tr><td><strong>Examples</strong></td><td><code>list</code>, <code>str</code>, <code>dict</code>, <code>tuple</code>, <code>set</code></td><td><code>map</code>, <code>filter</code>, <code>zip</code>, file objects, generators</td></tr>
+    <tr><td><strong>Re-usable?</strong></td><td>✅ Yes — creates a fresh iterator each time</td><td>❌ No — exhausted after one pass</td></tr>
+    <tr><td><strong>Holds data?</strong></td><td>Usually yes (in memory)</td><td>No — computes lazily</td></tr>
+    <tr><td><strong>iter() on itself?</strong></td><td>Returns a new iterator</td><td>Returns <code>self</code></td></tr>
+  </table>
+
+  <pre data-lang="python"><code><span class="cm"># Iterable: can loop multiple times</span>
+nums = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]
+<span class="kw">for</span> n <span class="kw">in</span> nums: <span class="bi">print</span>(n)   <span class="cm"># 1 2 3</span>
+<span class="kw">for</span> n <span class="kw">in</span> nums: <span class="bi">print</span>(n)   <span class="cm"># 1 2 3  (fresh iterator each time!)</span>
+
+<span class="cm"># Iterator: one-shot</span>
+it = <span class="bi">iter</span>(nums)
+<span class="bi">print</span>(<span class="bi">next</span>(it))   <span class="cm"># 1</span>
+<span class="bi">print</span>(<span class="bi">next</span>(it))   <span class="cm"># 2</span>
+<span class="bi">print</span>(<span class="bi">next</span>(it))   <span class="cm"># 3</span>
+<span class="bi">print</span>(<span class="bi">next</span>(it))   <span class="cm"># StopIteration!</span>
+
+<span class="cm"># Iterators are also iterable (return self)</span>
+<span class="bi">print</span>(<span class="bi">iter</span>(it) <span class="op">is</span> it)  <span class="cm"># True</span></code></pre>
+
+  <div class="callout warn">
+    <div class="callout-label">Interview Trap</div>
+    <strong>All iterators are iterables, but not all iterables are iterators.</strong> A list is iterable but NOT an iterator — it has no <code>__next__</code>.
+  </div>
+
+  <pre data-lang="python"><code><span class="cm"># Verify with hasattr or isinstance</span>
+<span class="kw">from</span> collections.abc <span class="kw">import</span> Iterable, Iterator
+
+<span class="bi">isinstance</span>([<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>], Iterable)   <span class="cm"># True</span>
+<span class="bi">isinstance</span>([<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>], Iterator)   <span class="cm"># False  ← list is NOT an iterator</span>
+
+it = <span class="bi">iter</span>([<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>])
+<span class="bi">isinstance</span>(it, Iterator)         <span class="cm"># True</span></code></pre>
+</div>
+
+<!-- ═══════════════════════════ SECTION 3 ═══════════════════════════ -->
+<div class="section" id="custom-iterators">
+  <div class="section-header">
+    <span class="section-num">03</span>
+    <h2>Building Custom Iterators</h2>
+  </div>
+
+  <p>You can make any class iterable by implementing the two dunder methods.</p>
+
+  <h3>Pattern 1: Separate Iterable + Iterator classes</h3>
+  <pre data-lang="python"><code><span class="kw">class</span> <span class="fn">CountUp</span>:
+    <span class="cm">"""Iterable: can be looped multiple times."""</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, start, stop):
+        <span class="bi">self</span>.start = start
+        <span class="bi">self</span>.stop = stop
+
+    <span class="kw">def</span> <span class="fn">__iter__</span>(<span class="bi">self</span>):
+        <span class="kw">return</span> <span class="fn">CountUpIterator</span>(<span class="bi">self</span>.start, <span class="bi">self</span>.stop)
+
+<span class="kw">class</span> <span class="fn">CountUpIterator</span>:
+    <span class="cm">"""Iterator: stateful, one-shot."""</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, current, stop):
+        <span class="bi">self</span>.current = current
+        <span class="bi">self</span>.stop = stop
+
+    <span class="kw">def</span> <span class="fn">__iter__</span>(<span class="bi">self</span>):
+        <span class="kw">return</span> <span class="bi">self</span>   <span class="cm"># iterators return self</span>
+
+    <span class="kw">def</span> <span class="fn">__next__</span>(<span class="bi">self</span>):
+        <span class="kw">if</span> <span class="bi">self</span>.current >= <span class="bi">self</span>.stop:
+            <span class="kw">raise</span> <span class="bi">StopIteration</span>
+        val = <span class="bi">self</span>.current
+        <span class="bi">self</span>.current += <span class="num">1</span>
+        <span class="kw">return</span> val
+
+counter = <span class="fn">CountUp</span>(<span class="num">1</span>, <span class="num">4</span>)
+<span class="bi">list</span>(counter)   <span class="cm"># [1, 2, 3]</span>
+<span class="bi">list</span>(counter)   <span class="cm"># [1, 2, 3]  ← re-usable!</span></code></pre>
+
+  <h3>Pattern 2: Sentinel-value iteration</h3>
+  <pre data-lang="python"><code><span class="cm"># iter(callable, sentinel) — lesser-known overload</span>
+<span class="kw">import</span> random
+
+<span class="cm"># Keep rolling until we get 6</span>
+rolls = <span class="bi">list</span>(<span class="bi">iter</span>(<span class="kw">lambda</span>: random.randint(<span class="num">1</span>, <span class="num">6</span>), <span class="num">6</span>))
+<span class="bi">print</span>(rolls)   <span class="cm"># e.g. [3, 1, 4, 1]  (stops before the 6)</span>
+
+<span class="cm"># Reading a file in chunks</span>
+<span class="kw">with</span> <span class="bi">open</span>(<span class="str">'data.bin'</span>, <span class="str">'rb'</span>) <span class="kw">as</span> f:
+    <span class="kw">for</span> chunk <span class="kw">in</span> <span class="bi">iter</span>(<span class="kw">lambda</span>: f.read(<span class="num">1024</span>), <span class="bi">b</span><span class="str">''</span>):
+        process(chunk)   <span class="cm"># elegant and Pythonic</span></code></pre>
+
+  <div class="callout tip">
+    <div class="callout-label">Pro Tip</div>
+    The two-argument <code>iter(callable, sentinel)</code> form is a hidden gem. Interviewers love asking "how would you iterate until a condition?" — this is the elegant answer.
+  </div>
+</div>
+
+<!-- ═══════════════════════════ SECTION 4 ═══════════════════════════ -->
+<div class="section" id="generators">
+  <div class="section-header">
+    <span class="section-num">04</span>
+    <h2>Generator Functions</h2>
+  </div>
+
+  <p>A generator function is any function containing a <code>yield</code> statement. Calling it does <strong>not</strong> execute the body — it returns a generator object.</p>
+
+  <div class="mental-model">
+    <div class="mental-model-title">// Mental Model</div>
+    Think of a generator as a <strong>paused function</strong>. Each call to <code>next()</code> resumes it from where it left off, runs until the next <code>yield</code>, delivers the value, and pauses again. State (local variables) is preserved between calls.
+  </div>
+
+  <pre data-lang="python"><code><span class="kw">def</span> <span class="fn">count_up</span>(start, stop):
+    <span class="bi">print</span>(<span class="str">"Generator started"</span>)       <span class="cm"># runs on first next()</span>
+    current = start
+    <span class="kw">while</span> current &lt; stop:
+        <span class="bi">print</span>(<span class="str">f"Yielding </span>{current}<span class="str">"</span>)
+        <span class="kw">yield</span> current                <span class="cm"># pause & emit value</span>
+        current += <span class="num">1</span>                 <span class="cm"># resumes here after next()</span>
+    <span class="bi">print</span>(<span class="str">"Generator done"</span>)
+
+gen = <span class="fn">count_up</span>(<span class="num">1</span>, <span class="num">4</span>)             <span class="cm"># NO execution yet!</span>
+<span class="bi">print</span>(<span class="bi">type</span>(gen))                   <span class="cm"># &lt;class 'generator'&gt;</span>
+
+<span class="bi">print</span>(<span class="bi">next</span>(gen))   <span class="cm"># "Generator started" → "Yielding 1" → 1</span>
+<span class="bi">print</span>(<span class="bi">next</span>(gen))   <span class="cm"># "Yielding 2" → 2</span>
+<span class="bi">print</span>(<span class="bi">next</span>(gen))   <span class="cm"># "Yielding 3" → 3</span>
+<span class="bi">print</span>(<span class="bi">next</span>(gen))   <span class="cm"># "Generator done" → StopIteration</span></code></pre>
+
+  <h3>yield with return value</h3>
+  <pre data-lang="python"><code><span class="kw">def</span> <span class="fn">gen_with_return</span>():
+    <span class="kw">yield</span> <span class="num">1</span>
+    <span class="kw">yield</span> <span class="num">2</span>
+    <span class="kw">return</span> <span class="str">"done"</span>   <span class="cm"># becomes StopIteration value (rarely used)</span>
+
+g = <span class="fn">gen_with_return</span>()
+<span class="bi">next</span>(g)  <span class="cm"># 1</span>
+<span class="bi">next</span>(g)  <span class="cm"># 2</span>
+<span class="kw">try</span>:
+    <span class="bi">next</span>(g)
+<span class="kw">except</span> <span class="bi">StopIteration</span> <span class="kw">as</span> e:
+    <span class="bi">print</span>(e.value)  <span class="cm"># "done"  ← return value stored here</span></code></pre>
+
+  <h3>Infinite generators</h3>
+  <pre data-lang="python"><code><span class="kw">def</span> <span class="fn">fibonacci</span>():
+    a, b = <span class="num">0</span>, <span class="num">1</span>
+    <span class="kw">while</span> <span class="kw">True</span>:       <span class="cm"># infinite — no StopIteration ever</span>
+        <span class="kw">yield</span> a
+        a, b = b, a + b
+
+<span class="kw">import</span> itertools
+first_10 = <span class="bi">list</span>(itertools.islice(<span class="fn">fibonacci</span>(), <span class="num">10</span>))
+<span class="cm"># [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]</span></code></pre>
+
+  <div class="callout warn">
+    <div class="callout-label">Watch Out</div>
+    Never call <code>list()</code> or <code>len()</code> on an infinite generator — your program will hang or crash.
+  </div>
+</div>
+
+<!-- ═══════════════════════════ SECTION 5 ═══════════════════════════ -->
+<div class="section" id="generator-expressions">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <h2>Generator Expressions</h2>
+  </div>
+
+  <p>Generator expressions are the lazy equivalent of list comprehensions — syntactically identical but wrapped in <code>()</code> instead of <code>[]</code>.</p>
+
+  <pre data-lang="python"><code><span class="cm"># List comprehension — eager, all in memory NOW</span>
+squares_list = [x**<span class="num">2</span> <span class="kw">for</span> x <span class="kw">in</span> <span class="bi">range</span>(<span class="num">10_000_000</span>)]  <span class="cm"># ~80 MB!</span>
+
+<span class="cm"># Generator expression — lazy, one item at a time</span>
+squares_gen = (x**<span class="num">2</span> <span class="kw">for</span> x <span class="kw">in</span> <span class="bi">range</span>(<span class="num">10_000_000</span>))   <span class="cm"># ~200 bytes</span>
+
+<span class="cm"># When passing to a function that takes an iterable,
+# you can drop the extra parentheses:</span>
+total = <span class="bi">sum</span>(x**<span class="num">2</span> <span class="kw">for</span> x <span class="kw">in</span> <span class="bi">range</span>(<span class="num">1000</span>))  <span class="cm"># only ONE set of parens</span></code></pre>
+
+  <h3>Nested generator expressions</h3>
+  <pre data-lang="python"><code><span class="cm"># Flattening a 2D structure lazily</span>
+matrix = [[<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>], [<span class="num">4</span>,<span class="num">5</span>,<span class="num">6</span>], [<span class="num">7</span>,<span class="num">8</span>,<span class="num">9</span>]]
+flat = (val <span class="kw">for</span> row <span class="kw">in</span> matrix <span class="kw">for</span> val <span class="kw">in</span> row)
+<span class="bi">list</span>(flat)   <span class="cm"># [1, 2, 3, 4, 5, 6, 7, 8, 9]</span>
+
+<span class="cm"># Chained filtering</span>
+evens = (x <span class="kw">for</span> x <span class="kw">in</span> <span class="bi">range</span>(<span class="num">20</span>) <span class="kw">if</span> x % <span class="num">2</span> == <span class="num">0</span> <span class="kw">if</span> x % <span class="num">3</span> == <span class="num">0</span>)
+<span class="bi">list</span>(evens)  <span class="cm"># [0, 6, 12, 18]</span></code></pre>
+
+  <div class="callout danger">
+    <div class="callout-label">Sneaky Trap — Late Binding</div>
+    Generator expressions capture <em>variables</em>, not values. The outer loop variable is evaluated lazily.
+  </div>
+
+  <pre data-lang="python"><code><span class="cm"># TRAP: multiplier is looked up when consumed, not when created</span>
+multiplier = <span class="num">2</span>
+gen = (x * multiplier <span class="kw">for</span> x <span class="kw">in</span> <span class="bi">range</span>(<span class="num">5</span>))
+multiplier = <span class="num">10</span>                    <span class="cm"># changed AFTER creation</span>
+<span class="bi">list</span>(gen)  <span class="cm"># [0, 10, 20, 30, 40]  ← uses 10, NOT 2!</span>
+
+<span class="cm"># Fix: capture the value explicitly</span>
+gen = (x * multiplier <span class="kw">for</span> x <span class="kw">in</span> <span class="bi">range</span>(<span class="num">5</span>) <span class="kw">for</span> multiplier <span class="kw">in</span> [multiplier])</code></pre>
+</div>
+
+<!-- ═══════════════════════════ SECTION 6 ═══════════════════════════ -->
+<div class="section" id="yield-from">
+  <div class="section-header">
+    <span class="section-num">06</span>
+    <h2>yield from</h2>
+  </div>
+
+  <p>Introduced in Python 3.3 (PEP 380), <code>yield from</code> delegates to a sub-generator or any iterable. It's more than syntactic sugar.</p>
+
+  <pre data-lang="python"><code><span class="cm"># Without yield from — verbose and incomplete</span>
+<span class="kw">def</span> <span class="fn">flatten_bad</span>(nested):
+    <span class="kw">for</span> sublist <span class="kw">in</span> nested:
+        <span class="kw">for</span> item <span class="kw">in</span> sublist:
+            <span class="kw">yield</span> item
+
+<span class="cm"># With yield from — clean, and handles send/throw properly</span>
+<span class="kw">def</span> <span class="fn">flatten</span>(nested):
+    <span class="kw">for</span> sublist <span class="kw">in</span> nested:
+        <span class="kw">yield</span> <span class="kw">from</span> sublist
+
+<span class="bi">list</span>(<span class="fn">flatten</span>([[<span class="num">1</span>,<span class="num">2</span>], [<span class="num">3</span>,<span class="num">4</span>], [<span class="num">5</span>]]))  <span class="cm"># [1, 2, 3, 4, 5]</span></code></pre>
+
+  <h3>What yield from actually does</h3>
+  <pre data-lang="python"><code><span class="cm"># yield from ITERABLE is equivalent to:</span>
+<span class="bi">_i</span> = <span class="bi">iter</span>(ITERABLE)
+<span class="kw">try</span>:
+    <span class="bi">_y</span> = <span class="bi">next</span>(<span class="bi">_i</span>)
+<span class="kw">except</span> <span class="bi">StopIteration</span> <span class="kw">as</span> <span class="bi">_e</span>:
+    <span class="bi">_r</span> = <span class="bi">_e</span>.value
+<span class="kw">else</span>:
+    <span class="kw">while</span> <span class="kw">True</span>:
+        <span class="kw">try</span>:
+            <span class="bi">_s</span> = <span class="kw">yield</span> <span class="bi">_y</span>         <span class="cm"># passes values from caller</span>
+        <span class="kw">except</span> <span class="bi">GeneratorExit</span> <span class="kw">as</span> <span class="bi">_e</span>:
+            <span class="bi">_i</span>.close(); <span class="kw">raise</span>
+        <span class="kw">except</span> <span class="bi">BaseException</span> <span class="kw">as</span> <span class="bi">_e</span>:
+            <span class="bi">_i</span>.throw(<span class="bi">type</span>(<span class="bi">_e</span>), <span class="bi">_e</span>)  <span class="cm"># forwards throw</span>
+        <span class="cm"># ... (simplified)</span>
+
+<span class="cm"># Key: return value of sub-generator becomes value of yield from expression</span>
+<span class="kw">def</span> <span class="fn">sub</span>():
+    <span class="kw">yield</span> <span class="num">1</span>
+    <span class="kw">return</span> <span class="str">"sub_done"</span>
+
+<span class="kw">def</span> <span class="fn">main</span>():
+    result = <span class="kw">yield</span> <span class="kw">from</span> <span class="fn">sub</span>()  <span class="cm"># result = "sub_done"</span>
+    <span class="bi">print</span>(result)</code></pre>
+
+  <h3>Recursive tree traversal with yield from</h3>
+  <pre data-lang="python"><code><span class="kw">def</span> <span class="fn">tree_dfs</span>(node):
+    <span class="kw">if</span> node <span class="op">is</span> <span class="kw">None</span>:
+        <span class="kw">return</span>
+    <span class="kw">yield</span> node.val
+    <span class="kw">yield</span> <span class="kw">from</span> <span class="fn">tree_dfs</span>(node.left)
+    <span class="kw">yield</span> <span class="kw">from</span> <span class="fn">tree_dfs</span>(node.right)</code></pre>
+</div>
+
+<!-- ═══════════════════════════ SECTION 7 ═══════════════════════════ -->
+<div class="section" id="send-throw-close">
+  <div class="section-header">
+    <span class="section-num">07</span>
+    <h2>Two-way Communication: send / throw / close</h2>
+  </div>
+
+  <p>Generators are not just one-way emitters. You can push data <em>into</em> them and send exceptions — this is what makes them powerful enough to implement coroutines.</p>
+
+  <h3>gen.send(value)</h3>
+  <pre data-lang="python"><code><span class="kw">def</span> <span class="fn">accumulator</span>():
+    total = <span class="num">0</span>
+    <span class="kw">while</span> <span class="kw">True</span>:
+        value = <span class="kw">yield</span> total    <span class="cm"># yield sends total OUT, receives value IN</span>
+        <span class="kw">if</span> value <span class="op">is</span> <span class="kw">None</span>:
+            <span class="kw">break</span>
+        total += value
+
+gen = <span class="fn">accumulator</span>()
+<span class="bi">next</span>(gen)        <span class="cm"># MUST prime with next() first → 0</span>
+gen.send(<span class="num">10</span>)     <span class="cm"># → 10</span>
+gen.send(<span class="num">20</span>)     <span class="cm"># → 30</span>
+gen.send(<span class="num">5</span>)      <span class="cm"># → 35</span>
+
+<span class="cm"># NOTE: next(gen) is equivalent to gen.send(None)</span></code></pre>
+
+  <div class="callout danger">
+    <div class="callout-label">Critical Rule</div>
+    You MUST call <code>next(gen)</code> (or <code>gen.send(None)</code>) to advance to the first <code>yield</code> before calling <code>gen.send(value)</code>. Sending a non-None value to an un-primed generator raises <code>TypeError</code>.
+  </div>
+
+  <h3>Priming decorator pattern</h3>
+  <pre data-lang="python"><code><span class="kw">import</span> functools
+
+<span class="kw">def</span> <span class="fn">coroutine</span>(func):
+    <span class="dec">@functools.wraps</span>(func)
+    <span class="kw">def</span> <span class="fn">wrapper</span>(*args, **kwargs):
+        gen = <span class="fn">func</span>(*args, **kwargs)
+        <span class="bi">next</span>(gen)   <span class="cm"># auto-prime</span>
+        <span class="kw">return</span> gen
+    <span class="kw">return</span> wrapper
+
+<span class="dec">@coroutine</span>
+<span class="kw">def</span> <span class="fn">logger</span>(prefix):
+    <span class="kw">while</span> <span class="kw">True</span>:
+        message = <span class="kw">yield</span>
+        <span class="bi">print</span>(<span class="str">f"[</span>{prefix}<span class="str">] </span>{message}<span class="str">"</span>)
+
+log = <span class="fn">logger</span>(<span class="str">"INFO"</span>)  <span class="cm"># already primed</span>
+log.send(<span class="str">"Server started"</span>)   <span class="cm"># [INFO] Server started</span></code></pre>
+
+  <h3>gen.throw(type, value, traceback)</h3>
+  <pre data-lang="python"><code><span class="kw">def</span> <span class="fn">resilient_gen</span>():
+    <span class="kw">while</span> <span class="kw">True</span>:
+        <span class="kw">try</span>:
+            x = <span class="kw">yield</span>
+            <span class="bi">print</span>(<span class="str">f"Got: </span>{x}<span class="str">"</span>)
+        <span class="kw">except</span> <span class="bi">ValueError</span> <span class="kw">as</span> e:
+            <span class="bi">print</span>(<span class="str">f"Caught ValueError: </span>{e}<span class="str">"</span>)  <span class="cm"># generator handles it</span>
+
+gen = <span class="fn">resilient_gen</span>(); <span class="bi">next</span>(gen)
+gen.send(<span class="num">42</span>)                    <span class="cm"># "Got: 42"</span>
+gen.throw(<span class="bi">ValueError</span>, <span class="str">"bad!"</span>) <span class="cm"># "Caught ValueError: bad!"</span></code></pre>
+
+  <h3>gen.close()</h3>
+  <pre data-lang="python"><code><span class="kw">def</span> <span class="fn">managed_resource</span>():
+    <span class="bi">print</span>(<span class="str">"Resource acquired"</span>)
+    <span class="kw">try</span>:
+        <span class="kw">while</span> <span class="kw">True</span>:
+            <span class="kw">yield</span>
+    <span class="kw">finally</span>:
+        <span class="bi">print</span>(<span class="str">"Resource released"</span>)  <span class="cm"># always runs on close()</span>
+
+gen = <span class="fn">managed_resource</span>(); <span class="bi">next</span>(gen)
+gen.close()  <span class="cm"># throws GeneratorExit inside; triggers finally</span></code></pre>
+</div>
+
+<!-- ═══════════════════════════ SECTION 8 ═══════════════════════════ -->
+<div class="section" id="coroutines">
+  <div class="section-header">
+    <span class="section-num">08</span>
+    <h2>Coroutines &amp; async/await</h2>
+  </div>
+
+  <p>Python's <code>async/await</code> syntax is built on generators. Understanding the lineage makes async code click.</p>
+
+  <pre data-lang="python"><code><span class="cm"># Evolution of coroutines</span>
+
+<span class="cm"># 1. Generator-based coroutine (Python 3.4, now deprecated)</span>
+<span class="dec">@asyncio.coroutine</span>
+<span class="kw">def</span> <span class="fn">old_style</span>():
+    result = <span class="kw">yield from</span> some_future
+
+<span class="cm"># 2. Native coroutine (Python 3.5+)</span>
+<span class="kw">async def</span> <span class="fn">new_style</span>():
+    result = <span class="kw">await</span> some_coroutine()   <span class="cm"># await ≈ yield from</span>
+
+<span class="cm"># 3. Async generators (Python 3.6+)</span>
+<span class="kw">async def</span> <span class="fn">async_range</span>(n):
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(n):
+        <span class="kw">await</span> asyncio.sleep(<span class="num">0</span>)   <span class="cm"># can await inside</span>
+        <span class="kw">yield</span> i                   <span class="cm"># can also yield</span>
+
+<span class="kw">async def</span> <span class="fn">main</span>():
+    <span class="kw">async for</span> val <span class="kw">in</span> <span class="fn">async_range</span>(<span class="num">5</span>):
+        <span class="bi">print</span>(val)</code></pre>
+
+  <h3>Async context managers vs async generators</h3>
+  <pre data-lang="python"><code><span class="kw">from</span> contextlib <span class="kw">import</span> asynccontextmanager
+
+<span class="dec">@asynccontextmanager</span>
+<span class="kw">async def</span> <span class="fn">managed_db</span>():
+    conn = <span class="kw">await</span> db.connect()
+    <span class="kw">try</span>:
+        <span class="kw">yield</span> conn        <span class="cm"># exactly ONE yield</span>
+    <span class="kw">finally</span>:
+        <span class="kw">await</span> conn.close()
+
+<span class="kw">async with</span> <span class="fn">managed_db</span>() <span class="kw">as</span> conn:
+    <span class="kw">await</span> conn.execute(<span class="str">"SELECT 1"</span>)</code></pre>
+</div>
+
+<!-- ═══════════════════════════ SECTION 9 ═══════════════════════════ -->
+<div class="section" id="itertools">
+  <div class="section-header">
+    <span class="section-num">09</span>
+    <h2>itertools — The Power Tools</h2>
+  </div>
+
+  <table>
+    <tr><th>Function</th><th>Description</th><th>Quick Example</th></tr>
+    <tr><td><code>count(n, step)</code></td><td>Infinite counter</td><td><code>count(10, 2)</code> → 10,12,14…</td></tr>
+    <tr><td><code>cycle(it)</code></td><td>Infinite loop over iterable</td><td><code>cycle('AB')</code> → A,B,A,B…</td></tr>
+    <tr><td><code>repeat(x, n)</code></td><td>Repeat n times (or forever)</td><td><code>repeat(0, 3)</code> → 0,0,0</td></tr>
+    <tr><td><code>islice(it, n)</code></td><td>Lazy slice</td><td><code>islice(count(), 5)</code> → 0-4</td></tr>
+    <tr><td><code>chain(*its)</code></td><td>Concatenate iterables</td><td><code>chain([1],[2,3])</code> → 1,2,3</td></tr>
+    <tr><td><code>chain.from_iterable</code></td><td>Flatten one level</td><td><code>chain.from_iterable([[1,2],[3]])</code></td></tr>
+    <tr><td><code>zip_longest</code></td><td>zip with fill value</td><td>pairs unequal sequences</td></tr>
+    <tr><td><code>product(*its)</code></td><td>Cartesian product</td><td><code>product('AB', [1,2])</code></td></tr>
+    <tr><td><code>permutations(it, r)</code></td><td>All ordered arrangements</td><td><code>permutations('ABC', 2)</code></td></tr>
+    <tr><td><code>combinations(it, r)</code></td><td>All unordered subsets</td><td><code>combinations([1,2,3], 2)</code></td></tr>
+    <tr><td><code>groupby(it, key)</code></td><td>Group consecutive items</td><td>SQL-like GROUP BY</td></tr>
+    <tr><td><code>takewhile(pred, it)</code></td><td>Take while predicate true</td><td><code>takewhile(lambda x: x&lt;5, …)</code></td></tr>
+    <tr><td><code>dropwhile(pred, it)</code></td><td>Drop while predicate true</td><td>opposite of takewhile</td></tr>
+    <tr><td><code>starmap(fn, it)</code></td><td>map with argument unpacking</td><td><code>starmap(pow, [(2,3)])</code> → 8</td></tr>
+    <tr><td><code>tee(it, n)</code></td><td>Clone an iterator n times</td><td>⚠️ memory cost</td></tr>
+    <tr><td><code>accumulate(it, fn)</code></td><td>Running reduction</td><td>running sum/product</td></tr>
+    <tr><td><code>pairwise(it)</code></td><td>Consecutive pairs (3.10+)</td><td><code>pairwise('ABCD')</code> → AB,BC,CD</td></tr>
+    <tr><td><code>batched(it, n)</code></td><td>Batches of n (3.12+)</td><td><code>batched('ABCDE', 2)</code></td></tr>
+  </table>
+
+  <h3>groupby — the tricky one</h3>
+  <pre data-lang="python"><code><span class="kw">from</span> itertools <span class="kw">import</span> groupby
+
+data = [<span class="str">"apple"</span>, <span class="str">"avocado"</span>, <span class="str">"banana"</span>, <span class="str">"blueberry"</span>, <span class="str">"cherry"</span>]
+
+<span class="cm"># groupby only groups CONSECUTIVE equal keys</span>
+<span class="cm"># always sort first if you want all groups together!</span>
+data.sort(key=<span class="kw">lambda</span> x: x[<span class="num">0</span>])
+
+<span class="kw">for</span> letter, group <span class="kw">in</span> groupby(data, key=<span class="kw">lambda</span> x: x[<span class="num">0</span>]):
+    <span class="bi">print</span>(letter, <span class="bi">list</span>(group))
+<span class="cm"># a ['apple', 'avocado']
+# b ['banana', 'blueberry']
+# c ['cherry']</span>
+
+<span class="cm"># TRAP: group iterator is invalidated when you advance groupby!</span>
+groups = {}
+<span class="kw">for</span> k, g <span class="kw">in</span> groupby(data, key=<span class="kw">lambda</span> x: x[<span class="num">0</span>]):
+    groups[k] = <span class="bi">list</span>(g)   <span class="cm"># must consume group before next iteration</span></code></pre>
+
+  <h3>tee — cloning iterators</h3>
+  <pre data-lang="python"><code><span class="kw">from</span> itertools <span class="kw">import</span> tee
+
+it1, it2 = tee(<span class="fn">fibonacci</span>(), <span class="num">2</span>)
+<span class="cm"># Now it1 and it2 are independent iterators of the same sequence
+# COST: tee must buffer items seen by one but not the other
+# If one iterator is far ahead, memory usage grows proportionally</span></code></pre>
+</div>
+
+<!-- ═══════════════════════════ SECTION 10 ═══════════════════════════ -->
+<div class="section" id="gotchas">
+  <div class="section-header">
+    <span class="section-num">10</span>
+    <h2>Gotchas &amp; Interview Traps</h2>
+  </div>
+
+  <h3>1. Exhausted iterators are silently empty</h3>
+  <pre data-lang="python"><code>gen = (x <span class="kw">for</span> x <span class="kw">in</span> <span class="bi">range</span>(<span class="num">3</span>))
+<span class="bi">list</span>(gen)   <span class="cm"># [0, 1, 2]</span>
+<span class="bi">list</span>(gen)   <span class="cm"># []  ← silently exhausted, NO error!</span>
+<span class="bi">sum</span>(gen)    <span class="cm"># 0   ← same trap</span></code></pre>
+
+  <h3>2. map() and filter() return iterators in Python 3</h3>
+  <pre data-lang="python"><code>result = <span class="bi">map</span>(<span class="bi">str</span>, [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>])
+<span class="bi">print</span>(result)          <span class="cm"># &lt;map object at 0x...&gt; — NOT a list</span>
+<span class="bi">print</span>(<span class="bi">list</span>(result))    <span class="cm"># ['1', '2', '3']</span>
+<span class="bi">print</span>(<span class="bi">list</span>(result))    <span class="cm"># []  ← exhausted!</span></code></pre>
+
+  <h3>3. zip stops at shortest</h3>
+  <pre data-lang="python"><code><span class="bi">list</span>(<span class="bi">zip</span>([<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>], [<span class="str">'a'</span>,<span class="str">'b'</span>]))
+<span class="cm"># [(1, 'a'), (2, 'b')]  ← 3 is silently dropped!</span>
+
+<span class="kw">from</span> itertools <span class="kw">import</span> zip_longest
+<span class="bi">list</span>(zip_longest([<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>], [<span class="str">'a'</span>,<span class="str">'b'</span>], fillvalue=<span class="str">'?'</span>))
+<span class="cm"># [(1, 'a'), (2, 'b'), (3, '?')]</span></code></pre>
+
+  <h3>4. Generator function vs generator object</h3>
+  <pre data-lang="python"><code><span class="kw">def</span> <span class="fn">gen_func</span>():
+    <span class="kw">yield</span> <span class="num">1</span>
+
+<span class="bi">print</span>(<span class="fn">gen_func</span>)     <span class="cm"># &lt;function gen_func&gt;  — the function</span>
+<span class="bi">print</span>(<span class="fn">gen_func</span>())   <span class="cm"># &lt;generator object&gt;   — calling it creates a generator</span>
+<span class="bi">print</span>(<span class="bi">bool</span>(<span class="fn">gen_func</span>()))  <span class="cm"># True! (non-None object)</span>
+
+<span class="cm"># Even an empty generator is truthy</span>
+<span class="kw">def</span> <span class="fn">empty</span>():
+    <span class="kw">return</span>
+    <span class="kw">yield</span>              <span class="cm"># makes it a generator function</span>
+<span class="bi">bool</span>(<span class="fn">empty</span>())          <span class="cm"># True! even though it yields nothing</span></code></pre>
+
+  <h3>5. return inside generator</h3>
+  <pre data-lang="python"><code><span class="kw">def</span> <span class="fn">early_stop</span>(n):
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(n):
+        <span class="kw">if</span> i == <span class="num">3</span>:
+            <span class="kw">return</span>       <span class="cm"># raises StopIteration, cleanly ends gen</span>
+        <span class="kw">yield</span> i
+
+<span class="bi">list</span>(<span class="fn">early_stop</span>(<span class="num">10</span>))   <span class="cm"># [0, 1, 2]</span></code></pre>
+
+  <h3>6. StopIteration inside a generator (Python 3.7+ change!)</h3>
+  <pre data-lang="python"><code><span class="cm"># PEP 479: StopIteration raised inside a generator
+# is converted to RuntimeError (breaking change from 3.6)</span>
+<span class="kw">def</span> <span class="fn">buggy_gen</span>():
+    <span class="kw">yield from</span> []
+    <span class="kw">raise</span> <span class="bi">StopIteration</span>  <span class="cm"># Python 3.7+: RuntimeError!</span>
+    <span class="cm"># Use 'return' instead</span>
+
+<span class="kw">def</span> <span class="fn">correct_gen</span>():
+    <span class="kw">yield from</span> []
+    <span class="kw">return</span>               <span class="cm"># correct way to end</span></code></pre>
+</div>
+
+<!-- ═══════════════════════════ SECTION 11 ═══════════════════════════ -->
+<div class="section" id="memory">
+  <div class="section-header">
+    <span class="section-num">11</span>
+    <h2>Memory &amp; Performance</h2>
+  </div>
+
+  <pre data-lang="python"><code><span class="kw">import</span> sys
+
+<span class="cm"># Memory comparison</span>
+lst = [x**<span class="num">2</span> <span class="kw">for</span> x <span class="kw">in</span> <span class="bi">range</span>(<span class="num">1_000_000</span>)]
+gen = (x**<span class="num">2</span> <span class="kw">for</span> x <span class="kw">in</span> <span class="bi">range</span>(<span class="num">1_000_000</span>))
+
+sys.getsizeof(lst)   <span class="cm"># ~8_697_456 bytes (~8.3 MB)</span>
+sys.getsizeof(gen)   <span class="cm"># 192 bytes</span>
+
+<span class="cm"># First-value efficiency</span>
+<span class="cm"># next(gen) returns in O(1) — no upfront computation</span>
+<span class="cm"># lst[0] seems O(1) but building the list was O(n)</span></code></pre>
+
+  <h3>When NOT to use generators</h3>
+  <ul>
+    <li>When you need <strong>random access</strong> (indexing) — use a list</li>
+    <li>When you need to <strong>iterate multiple times</strong> — list or cache with <code>tee</code></li>
+    <li>When sequence <strong>length matters upfront</strong> (e.g. progress bars)</li>
+    <li>When the computation is <strong>trivially fast</strong> and you need the result immediately</li>
+    <li><strong>Small, known-size data</strong> — list comprehension can be clearer</li>
+  </ul>
+
+  <h3>Pipeline pattern</h3>
+  <pre data-lang="python"><code><span class="cm"># Data pipeline: each step is lazy, memory stays O(1)</span>
+<span class="kw">def</span> <span class="fn">read_lines</span>(filepath):
+    <span class="kw">with</span> <span class="bi">open</span>(filepath) <span class="kw">as</span> f:
+        <span class="kw">yield from</span> f
+
+<span class="kw">def</span> <span class="fn">parse</span>(lines):
+    <span class="kw">for</span> line <span class="kw">in</span> lines:
+        <span class="kw">yield</span> line.strip().split(<span class="str">','</span>)
+
+<span class="kw">def</span> <span class="fn">filter_valid</span>(records):
+    <span class="kw">for</span> r <span class="kw">in</span> records:
+        <span class="kw">if</span> <span class="bi">len</span>(r) == <span class="num">3</span>:
+            <span class="kw">yield</span> r
+
+<span class="kw">def</span> <span class="fn">transform</span>(records):
+    <span class="kw">for</span> r <span class="kw">in</span> records:
+        <span class="kw">yield</span> {<span class="str">'name'</span>: r[<span class="num">0</span>], <span class="str">'age'</span>: <span class="bi">int</span>(r[<span class="num">1</span>]), <span class="str">'city'</span>: r[<span class="num">2</span>]}
+
+<span class="cm"># Compose the pipeline — nothing runs until consumed!</span>
+pipeline = <span class="fn">transform</span>(<span class="fn">filter_valid</span>(<span class="fn">parse</span>(<span class="fn">read_lines</span>(<span class="str">'data.csv'</span>))))
+<span class="kw">for</span> record <span class="kw">in</span> pipeline:
+    process(record)   <span class="cm"># handles a 10GB file with constant memory</span></code></pre>
+</div>
+
+<!-- ═══════════════════════════ SECTION 12 ═══════════════════════════ -->
+<div class="section" id="interview-qs">
+  <div class="section-header">
+    <span class="section-num">12</span>
+    <h2>Interview Questions &amp; Answers</h2>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">What is the difference between <code>iter()</code> and <code>next()</code>?</div>
+    <details>
+      <summary>▶ Show answer</summary>
+      <div class="answer"><code>iter(obj)</code> calls <code>obj.__iter__()</code> and returns an iterator object. <code>next(it)</code> calls <code>it.__next__()</code> and returns the next value (or raises <code>StopIteration</code>). You call <code>iter()</code> once to get the iterator, then <code>next()</code> repeatedly to consume it.</div>
+    </details>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">Why can you loop over a list multiple times but not a generator?</div>
+    <details>
+      <summary>▶ Show answer</summary>
+      <div class="answer">A list's <code>__iter__()</code> creates a brand new list iterator each time, always starting from index 0. A generator's <code>__iter__()</code> returns <code>self</code> — there is only one iterator, and it tracks a single position. Once exhausted, it's done.</div>
+    </details>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">What does this print? <code>gen = (x for x in range(3)); print(list(gen)); print(list(gen))</code></div>
+    <details>
+      <summary>▶ Show answer</summary>
+      <div class="answer"><code>[0, 1, 2]</code> then <code>[]</code>. The generator is exhausted after the first <code>list()</code> call. The second call silently produces an empty list — no error.</div>
+    </details>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">How is <code>yield from x</code> different from <code>for item in x: yield item</code>?</div>
+    <details>
+      <summary>▶ Show answer</summary>
+      <div class="answer"><code>yield from</code> properly forwards <code>send()</code> values and <code>throw()</code> exceptions to the sub-generator, and captures its return value. The manual for-loop loses this two-way communication — it only forwards yielded values.</div>
+    </details>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">What happens if you raise <code>StopIteration</code> inside a generator in Python 3.7+?</div>
+    <details>
+      <summary>▶ Show answer</summary>
+      <div class="answer">It is converted to a <code>RuntimeError</code> (PEP 479). This was a breaking change to prevent subtle bugs where an accidentally exhausted iterator could silently terminate an outer generator. Use <code>return</code> to end a generator cleanly.</div>
+    </details>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">What must you do before calling <code>gen.send(value)</code> with a non-None value?</div>
+    <details>
+      <summary>▶ Show answer</summary>
+      <div class="answer">You must "prime" the generator by calling <code>next(gen)</code> (or <code>gen.send(None)</code>) first to advance it to the first <code>yield</code> expression. Without priming, sending a non-None value raises <code>TypeError: can't send non-None value to a just-started generator</code>.</div>
+    </details>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">What is the memory complexity of <code>sum(x**2 for x in range(10_000_000))</code>?</div>
+    <details>
+      <summary>▶ Show answer</summary>
+      <div class="answer">O(1) — the generator expression computes one value at a time. <code>sum()</code> consumes each value immediately without storing the entire sequence. Compare to <code>sum([x**2 for x in range(10_000_000)])</code> which is O(n) — the entire list lives in memory before summing.</div>
+    </details>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">Implement <code>zip()</code> from scratch using generators.</div>
+    <details>
+      <summary>▶ Show answer</summary>
+      <div class="answer">
+        <pre style="margin:0"><code><span class="kw">def</span> <span class="fn">my_zip</span>(*iterables):
+    iters = [<span class="bi">iter</span>(it) <span class="kw">for</span> it <span class="kw">in</span> iterables]
+    <span class="kw">while</span> iters:
+        result = []
+        <span class="kw">for</span> it <span class="kw">in</span> iters:
+            <span class="kw">try</span>:
+                result.append(<span class="bi">next</span>(it))
+            <span class="kw">except</span> <span class="bi">StopIteration</span>:
+                <span class="kw">return</span>   <span class="cm"># stop at shortest</span>
+        <span class="kw">yield</span> <span class="bi">tuple</span>(result)</code></pre>
+      </div>
+    </details>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">What does <code>itertools.tee</code> do, and what's the risk?</div>
+    <details>
+      <summary>▶ Show answer</summary>
+      <div class="answer"><code>tee(it, n)</code> creates n independent iterators from one. The risk: items consumed by one iterator but not yet consumed by others must be buffered in memory. If one iterator is far ahead, memory grows O(distance). After calling <code>tee</code>, never use the original iterator.</div>
+    </details>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-q">Write a generator that yields all permutations of a list without using <code>itertools</code>.</div>
+    <details>
+      <summary>▶ Show answer</summary>
+      <div class="answer">
+        <pre style="margin:0"><code><span class="kw">def</span> <span class="fn">permutations</span>(lst):
+    <span class="kw">if</span> <span class="bi">len</span>(lst) <= <span class="num">1</span>:
+        <span class="kw">yield</span> lst
+        <span class="kw">return</span>
+    <span class="kw">for</span> i, item <span class="kw">in</span> <span class="bi">enumerate</span>(lst):
+        rest = lst[:i] + lst[i+<span class="num">1</span>:]
+        <span class="kw">for</span> perm <span class="kw">in</span> <span class="fn">permutations</span>(rest):
+            <span class="kw">yield</span> [item] + perm</code></pre>
+      </div>
+    </details>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<div class="callout tip" style="margin-bottom: 2rem">
+  <div class="callout-label">Final Cheat Sheet</div>
+  <strong>Iterable</strong> = has <code>__iter__</code> · <strong>Iterator</strong> = has <code>__iter__</code> + <code>__next__</code> · All iterators are iterable · Generators are iterators · <code>yield</code> pauses execution · <code>send()</code> pushes values in · <code>yield from</code> delegates + forwards · Generator expressions are lazy · <code>map/filter/zip</code> return iterators in Python 3 · <code>StopIteration</code> inside a generator → <code>RuntimeError</code> in 3.7+
+</div>
+
+</div>
+</body>
+</html>

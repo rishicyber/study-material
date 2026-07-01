@@ -1,0 +1,2009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LTE Architecture & Call Flow</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;1,300&display=swap');
+
+  :root {
+    --bg: #030b14;
+    --surface: #071524;
+    --surface2: #0b1f35;
+    --border: #0e3356;
+    --accent: #00c8ff;
+    --accent2: #00ff9d;
+    --accent3: #ff6b35;
+    --accent4: #c678dd;
+    --text: #c9dde8;
+    --text-dim: #5a7d96;
+    --heading: #e8f4fc;
+    --mono: 'Share Tech Mono', monospace;
+    --display: 'Rajdhani', sans-serif;
+    --body: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 15px;
+    line-height: 1.8;
+    overflow-x: hidden;
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,200,255,0.015) 2px,
+      rgba(0,200,255,0.015) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* HEADER */
+  header {
+    position: relative;
+    background: linear-gradient(135deg, #020d1a 0%, #051626 50%, #030f1f 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 60px 40px 50px;
+    overflow: hidden;
+  }
+
+  header::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(0,200,255,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  header::after {
+    content: 'LTE';
+    position: absolute;
+    right: 40px; bottom: -20px;
+    font-family: var(--display);
+    font-size: 180px;
+    font-weight: 700;
+    color: rgba(0,200,255,0.04);
+    letter-spacing: -10px;
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .header-badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent2);
+    border: 1px solid var(--accent2);
+    padding: 3px 10px;
+    margin-bottom: 20px;
+    letter-spacing: 2px;
+  }
+
+  header h1 {
+    font-family: var(--display);
+    font-size: clamp(32px, 5vw, 64px);
+    font-weight: 700;
+    color: var(--heading);
+    line-height: 1.1;
+    letter-spacing: 1px;
+    max-width: 700px;
+  }
+
+  header h1 span { color: var(--accent); }
+
+  header p.subtitle {
+    margin-top: 16px;
+    color: var(--text-dim);
+    font-size: 14px;
+    font-style: italic;
+    max-width: 600px;
+  }
+
+  /* TOC */
+  .toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    margin: 40px;
+    padding: 30px 36px;
+  }
+
+  .toc-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    margin-bottom: 20px;
+  }
+
+  .toc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 6px 30px;
+  }
+
+  .toc a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 13px;
+    font-family: var(--mono);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  .toc a::before { content: '→'; color: var(--accent); font-size: 11px; }
+  .toc a:hover { color: var(--accent); border-color: rgba(0,200,255,0.2); }
+
+  /* MAIN LAYOUT */
+  main { max-width: 1100px; margin: 0 auto; padding: 0 40px 80px; }
+
+  /* SECTION */
+  .section {
+    margin-bottom: 60px;
+    border-left: 2px solid var(--border);
+    padding-left: 30px;
+    position: relative;
+  }
+
+  .section::before {
+    content: '';
+    position: absolute;
+    left: -5px; top: 0;
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--accent);
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--accent2);
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .section h2 {
+    font-family: var(--display);
+    font-size: clamp(22px, 3vw, 34px);
+    font-weight: 700;
+    color: var(--heading);
+    margin-bottom: 20px;
+    line-height: 1.2;
+  }
+
+  .section h3 {
+    font-family: var(--display);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--accent);
+    margin: 32px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section h4 {
+    font-family: var(--display);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--accent2);
+    margin: 20px 0 8px;
+  }
+
+  .section p {
+    margin-bottom: 14px;
+    color: var(--text);
+  }
+
+  /* DIVIDER */
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, var(--accent) 0%, transparent 100%);
+    margin: 50px 0;
+    opacity: 0.3;
+  }
+
+  /* ARCHITECTURE DIAGRAM */
+  .arch-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 30px;
+    margin: 24px 0;
+    overflow-x: auto;
+  }
+
+  .arch-diagram pre {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.6;
+    white-space: pre;
+  }
+
+  /* COMPONENT CARDS */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .card.blue::before { background: var(--accent); }
+  .card.green::before { background: var(--accent2); }
+  .card.orange::before { background: var(--accent3); }
+  .card.purple::before { background: var(--accent4); }
+
+  .card:hover {
+    border-color: rgba(0,200,255,0.3);
+    transform: translateY(-2px);
+  }
+
+  .card-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+
+  .card.blue .card-tag { color: var(--accent); }
+  .card.green .card-tag { color: var(--accent2); }
+  .card.orange .card-tag { color: var(--accent3); }
+  .card.purple .card-tag { color: var(--accent4); }
+
+  .card h4 {
+    font-family: var(--display);
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--heading);
+    margin-bottom: 10px;
+  }
+
+  .card p { font-size: 13px; color: var(--text-dim); line-height: 1.6; }
+
+  /* CALL FLOW */
+  .flow {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 30px;
+    margin: 24px 0;
+    overflow-x: auto;
+  }
+
+  .flow pre {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.7;
+    white-space: pre;
+  }
+
+  .flow-step {
+    display: flex;
+    gap: 16px;
+    margin: 10px 0;
+    align-items: flex-start;
+  }
+
+  .step-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    background: rgba(0,200,255,0.08);
+    border: 1px solid rgba(0,200,255,0.2);
+    padding: 2px 8px;
+    white-space: nowrap;
+    margin-top: 2px;
+  }
+
+  .step-body { flex: 1; }
+  .step-title { font-family: var(--display); font-size: 15px; font-weight: 600; color: var(--heading); }
+  .step-desc { font-size: 13px; color: var(--text-dim); margin-top: 3px; }
+
+  /* TABLE */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 13px;
+  }
+
+  .data-table th {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 2px solid var(--border);
+    background: var(--surface);
+  }
+
+  .data-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(14,51,86,0.5);
+    color: var(--text);
+    vertical-align: top;
+  }
+
+  .data-table tr:hover td { background: rgba(0,200,255,0.03); }
+
+  .data-table td:first-child {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent2);
+    white-space: nowrap;
+  }
+
+  /* HIGHLIGHT BOX */
+  .highlight {
+    background: rgba(0,200,255,0.04);
+    border-left: 3px solid var(--accent);
+    padding: 16px 20px;
+    margin: 20px 0;
+  }
+
+  .highlight.green { border-color: var(--accent2); background: rgba(0,255,157,0.04); }
+  .highlight.orange { border-color: var(--accent3); background: rgba(255,107,53,0.04); }
+  .highlight.purple { border-color: var(--accent4); background: rgba(198,120,221,0.04); }
+
+  .highlight p { margin: 0; font-size: 13px; }
+
+  /* INTERFACE LIST */
+  .iface-list { list-style: none; margin: 12px 0; }
+  .iface-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(14,51,86,0.4);
+    display: flex;
+    gap: 14px;
+    align-items: baseline;
+    font-size: 13px;
+  }
+
+  .iface-list li .iname {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    min-width: 90px;
+  }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 30px 40px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+  }
+
+  /* Animations */
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .blink { animation: pulse 2s infinite; }
+
+  /* Tag inline */
+  .tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 2px;
+    margin: 0 2px;
+    vertical-align: middle;
+  }
+  .tag.blue { background: rgba(0,200,255,0.12); color: var(--accent); border: 1px solid rgba(0,200,255,0.25); }
+  .tag.green { background: rgba(0,255,157,0.1); color: var(--accent2); border: 1px solid rgba(0,255,157,0.25); }
+  .tag.orange { background: rgba(255,107,53,0.1); color: var(--accent3); border: 1px solid rgba(255,107,53,0.25); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-badge">3GPP RELEASE 8–15 · TECHNICAL REFERENCE</div>
+  <h1>LTE Architecture<br>&amp; <span>Call Flow</span></h1>
+  <p class="subtitle">A comprehensive technical reference covering every node, interface, protocol, and procedure in Long-Term Evolution networks — from radio access to core and beyond.</p>
+</header>
+
+<!-- TABLE OF CONTENTS -->
+<div style="max-width:1100px;margin:0 auto;padding:0 40px;">
+  <div class="toc">
+    <div class="toc-title">// TABLE OF CONTENTS</div>
+    <div class="toc-grid">
+      <a href="#s1">1. LTE Overview &amp; Standards</a>
+      <a href="#s2">2. System Architecture Evolution (SAE)</a>
+      <a href="#s3">3. E-UTRAN: Radio Access Network</a>
+      <a href="#s4">4. eNodeB Deep Dive</a>
+      <a href="#s5">5. Evolved Packet Core (EPC)</a>
+      <a href="#s6">6. MME — Mobility Management Entity</a>
+      <a href="#s7">7. Serving Gateway (SGW)</a>
+      <a href="#s8">8. PDN Gateway (PGW)</a>
+      <a href="#s9">9. HSS — Home Subscriber Server</a>
+      <a href="#s10">10. PCRF — Policy &amp; Charging</a>
+      <a href="#s11">11. Interfaces &amp; Reference Points</a>
+      <a href="#s12">12. Protocol Stack</a>
+      <a href="#s13">13. Radio Protocol Layers</a>
+      <a href="#s14">14. LTE Attach Procedure</a>
+      <a href="#s15">15. Default Bearer Setup</a>
+      <a href="#s16">16. Dedicated Bearer Setup</a>
+      <a href="#s17">17. Authentication &amp; Security</a>
+      <a href="#s18">18. Handover Procedures</a>
+      <a href="#s19">19. Detach Procedure</a>
+      <a href="#s20">20. QoS Architecture</a>
+      <a href="#s21">21. EPS Bearer Model</a>
+      <a href="#s22">22. Idle Mode &amp; Paging</a>
+      <a href="#s23">23. MIMO &amp; Physical Layer</a>
+      <a href="#s24">24. VoLTE Call Flow</a>
+      <a href="#s25">25. Roaming Architecture</a>
+    </div>
+  </div>
+</div>
+
+<main>
+
+<!-- ============================================================ -->
+<!-- SECTION 1 -->
+<!-- ============================================================ -->
+<div class="section" id="s1">
+  <span class="section-label">// SECTION 01</span>
+  <h2>LTE Overview &amp; Standards</h2>
+
+  <p>Long-Term Evolution (LTE) is a 4th-generation (4G) wireless broadband standard developed by the 3rd Generation Partnership Project (3GPP) beginning with Release 8 (2008). It represents a complete redesign of mobile network architecture, moving away from the circuit-switched heritage of 2G/3G toward an entirely packet-switched, IP-based system.</p>
+
+  <p>The name "Long-Term Evolution" reflects the intent to create a technology platform that could evolve over time — and indeed it has, through Releases 9, 10 (LTE-Advanced), 11, 12, 13, 14, and 15, each adding significant capabilities including carrier aggregation, massive MIMO, device-to-device (D2D) communication, and narrowband IoT (NB-IoT).</p>
+
+  <h3>Core Design Objectives</h3>
+  <div class="cards">
+    <div class="card blue">
+      <div class="card-tag">PERFORMANCE</div>
+      <h4>Peak Data Rates</h4>
+      <p>Downlink: 300 Mbps (Release 8), up to 1 Gbps (LTE-Advanced). Uplink: 75 Mbps. Achieved via OFDMA and MIMO antenna techniques.</p>
+    </div>
+    <div class="card green">
+      <div class="card-tag">LATENCY</div>
+      <h4>Low Latency</h4>
+      <p>User-plane latency under 5 ms one-way. Control-plane latency (idle to active) under 100 ms. Critical for real-time services and VoLTE.</p>
+    </div>
+    <div class="card orange">
+      <div class="card-tag">SPECTRUM</div>
+      <h4>Flexible Bandwidth</h4>
+      <p>Scalable from 1.4 MHz to 20 MHz channel bandwidths. Operates across multiple frequency bands (FDD and TDD modes).</p>
+    </div>
+    <div class="card purple">
+      <div class="card-tag">ARCHITECTURE</div>
+      <h4>Flat IP Architecture</h4>
+      <p>Eliminated RNC and introduced the flat all-IP Evolved Packet System (EPS), simplifying the network and reducing cost.</p>
+    </div>
+  </div>
+
+  <h3>Key 3GPP Releases</h3>
+  <table class="data-table">
+    <thead>
+      <tr><th>Release</th><th>Year</th><th>Key Features</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Rel-8</td><td>2008</td><td>Core LTE specification. OFDMA DL, SC-FDMA UL, 2×2 MIMO, EPC, basic QoS.</td></tr>
+      <tr><td>Rel-9</td><td>2009</td><td>Dual-layer beamforming, MBMS, enhanced femtocell (HeNB) support.</td></tr>
+      <tr><td>Rel-10</td><td>2011</td><td>LTE-Advanced: carrier aggregation (up to 5 CCs), 8×8 DL MIMO, CoMP, relay nodes.</td></tr>
+      <tr><td>Rel-11</td><td>2012</td><td>Enhanced CoMP, ePDCCH, HetNet enhancements, ProSe foundations.</td></tr>
+      <tr><td>Rel-12</td><td>2014</td><td>Small cells, Device-to-Device (ProSe), MTC enhancements, dual connectivity.</td></tr>
+      <tr><td>Rel-13</td><td>2015</td><td>LTE-Advanced Pro: LAA, LWA, NB-IoT (Cat-NB1), eMTC (Cat-M1).</td></tr>
+      <tr><td>Rel-14</td><td>2017</td><td>V2X communications, enhanced LAA, further NB-IoT/eMTC improvements.</td></tr>
+      <tr><td>Rel-15</td><td>2018</td><td>5G NR anchor, LTE/NR coexistence, further IoT enhancements.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>LTE vs Previous Generations</h3>
+  <table class="data-table">
+    <thead>
+      <tr><th>Aspect</th><th>2G/GSM</th><th>3G/UMTS</th><th>4G/LTE</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Core Network</td><td>BSS + NSS (Circuit)</td><td>UTRAN + CN (Mixed)</td><td>E-UTRAN + EPC (All-IP)</td></tr>
+      <tr><td>Radio Controller</td><td>BSC</td><td>RNC</td><td>None (Distributed to eNB)</td></tr>
+      <tr><td>Switching</td><td>Circuit + Packet</td><td>Circuit + Packet</td><td>Packet only</td></tr>
+      <tr><td>Voice</td><td>Native circuit</td><td>Native circuit + VoIP</td><td>VoLTE (IMS-based)</td></tr>
+      <tr><td>Peak DL Speed</td><td>~270 kbps</td><td>~42 Mbps (HSPA+)</td><td>~300 Mbps–1 Gbps</td></tr>
+      <tr><td>Latency</td><td>~300–600 ms</td><td>~50–100 ms</td><td>~5–15 ms</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<!-- SECTION 2 -->
+<!-- ============================================================ -->
+<div class="section" id="s2">
+  <span class="section-label">// SECTION 02</span>
+  <h2>System Architecture Evolution (SAE)</h2>
+
+  <p>The overall 4G system is called the Evolved Packet System (EPS). It comprises two major domains: the E-UTRAN (radio access network) and the EPC (Evolved Packet Core). Together, these form a purely IP-based end-to-end system with no circuit-switched fallback in the native design.</p>
+
+  <div class="arch-diagram">
+    <pre>
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │                     EVOLVED PACKET SYSTEM (EPS)                             │
+  ├─────────────────────────────────┬───────────────────────────────────────────┤
+  │        E-UTRAN                  │         EVOLVED PACKET CORE (EPC)         │
+  │   (Radio Access Network)        │                                           │
+  │                                 │   ┌──────┐  ┌──────┐  ┌──────┐  ┌──────┐│
+  │   ┌────────┐   X2   ┌────────┐  │   │ MME  │  │ SGW  │  │ PGW  │  │ HSS  ││
+  │   │  eNB   │◄──────►│  eNB   │  │   │      │  │      │  │      │  │      ││
+  │   │        │        │        │  │   └──────┘  └──────┘  └──────┘  └──────┘│
+  │   └────────┘        └────────┘  │   ┌──────┐  ┌──────┐                    │
+  │        │                 │      │   │ PCRF │  │ ANDSF│                    │
+  │       LTE-Uu            LTE-Uu  │   └──────┘  └──────┘                    │
+  │        │                 │      │                                           │
+  │      ┌─┴─────────────────┴─┐   │                                           │
+  │      │         UE           │   │                                           │
+  │      └─────────────────────┘   │                                           │
+  └─────────────────────────────────┴───────────────────────────────────────────┘
+                                          │
+                                    ┌─────┴─────┐
+                                    │  Internet /│
+                                    │  IMS / PDN │
+                                    └───────────┘
+    </pre>
+  </div>
+
+  <h3>Fundamental Architecture Principles</h3>
+
+  <h4>1. Flat Architecture</h4>
+  <p>Unlike UMTS which had a hierarchical BSC/RNC controlling multiple base stations, LTE distributes intelligence to the eNodeB. There is no centralized radio network controller. This flattening reduces signalling delay and simplifies the network hierarchy.</p>
+
+  <h4>2. Separation of Control and User Planes</h4>
+  <p>The control plane handles signalling (authentication, session management, mobility) while the user plane carries actual data traffic. These planes are separated both logically and often physically, allowing each to be scaled independently. In the core, this manifests as separate MME (control) and SGW/PGW (user-plane) nodes.</p>
+
+  <h4>3. All-IP Bearer Model</h4>
+  <p>Data is always carried as IP packets. Connections are modeled as "EPS bearers" — logical tunnels between the UE and the PDN Gateway using GTP (GPRS Tunnelling Protocol) encapsulation over the S1-U and S5/S8 interfaces.</p>
+
+  <h4>4. Mobility via X2 and S1 Handovers</h4>
+  <p>LTE supports seamless mobility through handovers. The X2 interface enables direct eNB-to-eNB handovers (faster, less core involvement), while S1-based handovers go through the MME/SGW and are used when X2 is unavailable.</p>
+</div>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<!-- SECTION 3 -->
+<!-- ============================================================ -->
+<div class="section" id="s3">
+  <span class="section-label">// SECTION 03</span>
+  <h2>E-UTRAN: Evolved Universal Terrestrial Radio Access Network</h2>
+
+  <p>The E-UTRAN is the radio access portion of LTE. Unlike its predecessor (UTRAN in 3G), it consists solely of eNodeBs (eNBs) — there is no hierarchical controller. The eNBs connect directly to the EPC via the S1 interface and to each other via the X2 interface.</p>
+
+  <div class="arch-diagram">
+    <pre>
+  E-UTRAN Architecture:
+
+  ┌──────────────────────────────────────────────────────────────┐
+  │                          E-UTRAN                             │
+  │                                                              │
+  │   ┌─────────────────────────────────────────────────────┐   │
+  │   │                 eNodeB Cluster                       │   │
+  │   │                                                      │   │
+  │   │   ┌──────┐  X2  ┌──────┐  X2  ┌──────┐            │   │
+  │   │   │ eNB1 │◄────►│ eNB2 │◄────►│ eNB3 │            │   │
+  │   │   └──────┘      └──────┘      └──────┘            │   │
+  │   │      │              │              │                │   │
+  │   │    S1-C/U         S1-C/U        S1-C/U             │   │
+  │   └──────┼──────────────┼──────────────┼───────────────┘   │
+  │          │              │              │                      │
+  └──────────┼──────────────┼──────────────┼──────────────────── ┘
+             │              │              │
+             ▼              ▼              ▼
+          ┌──────────────────────────────────┐
+          │    EPC (MME / SGW / PGW)          │
+          └──────────────────────────────────┘
+    </pre>
+  </div>
+
+  <h3>Cell Types and Deployment Scenarios</h3>
+  <div class="cards">
+    <div class="card blue">
+      <div class="card-tag">MACRO CELL</div>
+      <h4>Macro eNB</h4>
+      <p>Standard outdoor base station. Coverage radius 1–30 km depending on frequency band and terrain. Typically 20–40W RF output per sector. 3-sector configuration is most common.</p>
+    </div>
+    <div class="card green">
+      <div class="card-tag">SMALL CELL</div>
+      <h4>Pico / Femto eNB</h4>
+      <p>Low-power indoor/outdoor cells for capacity hotspots. Femtocells (Home eNBs / HeNB) serve 1–8 users; picocells serve small buildings. Connect via broadband backhaul (DSL, fiber).</p>
+    </div>
+    <div class="card orange">
+      <div class="card-tag">RELAY NODE</div>
+      <h4>Relay Node (RN)</h4>
+      <p>Introduced in Release 10. Wirelessly backhauled from a Donor eNB (DeNB) via the Un interface. Extends coverage to areas without wired backhaul.</p>
+    </div>
+    <div class="card purple">
+      <div class="card-tag">HET-NET</div>
+      <h4>Heterogeneous Networks</h4>
+      <p>Combination of macro and small cells on the same or different frequencies. Requires inter-cell interference coordination (eICIC) and advanced scheduling.</p>
+    </div>
+  </div>
+
+  <h3>Carrier Aggregation (LTE-Advanced)</h3>
+  <p>Starting with Release 10, LTE-Advanced introduced Carrier Aggregation (CA), allowing a UE to simultaneously receive/transmit on multiple component carriers (CCs), each up to 20 MHz wide, for a combined bandwidth of up to 100 MHz (5 CCs). This dramatically increases peak throughput.</p>
+
+  <table class="data-table">
+    <thead>
+      <tr><th>CA Type</th><th>Description</th><th>Example</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Intra-band Contiguous</td><td>Multiple CCs on same band, adjacent spectrum</td><td>Band 1: 20+20 MHz = 40 MHz</td></tr>
+      <tr><td>Intra-band Non-Contiguous</td><td>Same band, non-adjacent spectrum</td><td>Band 4: two separated blocks</td></tr>
+      <tr><td>Inter-band</td><td>CCs on different frequency bands</td><td>Band 3 + Band 7 aggregated</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<!-- SECTION 4 -->
+<!-- ============================================================ -->
+<div class="section" id="s4">
+  <span class="section-label">// SECTION 04</span>
+  <h2>eNodeB Deep Dive</h2>
+
+  <p>The eNodeB (eNB) is the fundamental building block of the LTE radio access network. It is a base station that contains all the intelligence previously split between a 3G base station (NodeB) and its Radio Network Controller (RNC). This consolidation simplifies the architecture and reduces latency.</p>
+
+  <h3>eNB Functions — Radio Resource Management (RRM)</h3>
+  <p>The eNB is responsible for all RRM decisions, including:</p>
+
+  <div class="flow-step">
+    <div class="step-num">SCHED</div>
+    <div class="step-body">
+      <div class="step-title">Downlink/Uplink Scheduling</div>
+      <div class="step-desc">The eNB scheduler allocates physical resource blocks (PRBs) to UEs every 1 ms Transmission Time Interval (TTI). Scheduling algorithms consider channel quality (CQI reports from UEs), QoS requirements, buffer status, and fairness. Common algorithms: Round Robin, Proportional Fair, Maximum Throughput.</div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="step-num">HARQ</div>
+    <div class="step-body">
+      <div class="step-title">Hybrid ARQ (HARQ)</div>
+      <div class="step-desc">LTE uses HARQ with Incremental Redundancy (IR) for link adaptation. The UE/eNB retransmits lost packets with additional redundancy, combining multiple transmissions for improved decoding. HARQ operates at Layer 1, with Round-Trip Time of ~8 ms.</div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="step-num">AMC</div>
+    <div class="step-body">
+      <div class="step-title">Adaptive Modulation and Coding (AMC)</div>
+      <div class="step-desc">Based on Channel Quality Indicator (CQI) feedback from the UE, the eNB selects the most appropriate Modulation and Coding Scheme (MCS): QPSK (low SNR), 16-QAM (medium SNR), 64-QAM (high SNR), or 256-QAM (LTE-Advanced Pro). This maximizes spectral efficiency.</div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="step-num">RRC</div>
+    <div class="step-body">
+      <div class="step-title">Radio Resource Control (RRC)</div>
+      <div class="step-desc">The RRC protocol manages UE state (RRC_IDLE, RRC_CONNECTED), connection establishment, reconfiguration, and release. RRC messages carry system information, connection setup, measurement configuration, and handover commands.</div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="step-num">ICIC</div>
+    <div class="step-body">
+      <div class="step-title">Inter-Cell Interference Coordination (ICIC)</div>
+      <div class="step-desc">Neighboring eNBs coordinate frequency resource usage via X2 messages (Relative Narrowband TX Power / RNTP, High Interference Indication / HII) to manage interference at cell edges. Enhanced ICIC (eICIC) in Rel-10 adds Almost Blank Subframe (ABS) for HetNets.</div>
+    </div>
+  </div>
+
+  <h3>eNB Internal Architecture</h3>
+  <div class="arch-diagram">
+    <pre>
+  ┌─────────────────────────────────────────────────────┐
+  │                    eNodeB                           │
+  │                                                     │
+  │  ┌──────────────────────────────────────────────┐  │
+  │  │              Baseband Unit (BBU)              │  │
+  │  │                                              │  │
+  │  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  │  │
+  │  │  │   RRC    │  │   PDCP   │  │   RLC    │  │  │
+  │  │  └──────────┘  └──────────┘  └──────────┘  │  │
+  │  │  ┌──────────────────────────────────────┐  │  │
+  │  │  │              MAC Layer                │  │  │
+  │  │  │   Scheduler | HARQ | RACH Handling   │  │  │
+  │  │  └──────────────────────────────────────┘  │  │
+  │  │  ┌──────────────────────────────────────┐  │  │
+  │  │  │     PHY Layer (L1 Processing)         │  │  │
+  │  │  │  OFDM | MIMO | FFT/IFFT | Coding     │  │  │
+  │  │  └──────────────────────────────────────┘  │  │
+  │  └──────────────────────────────────────────────┘  │
+  │                     CPRI/eCPRI                     │
+  │  ┌──────────────────────────────────────────────┐  │
+  │  │           Remote Radio Unit (RRU)             │  │
+  │  │     RF Front-End | Power Amplifiers | Ant.    │  │
+  │  └──────────────────────────────────────────────┘  │
+  └─────────────────────────────────────────────────────┘
+    </pre>
+  </div>
+
+  <h3>UE States and Transitions</h3>
+  <table class="data-table">
+    <thead>
+      <tr><th>State</th><th>Description</th><th>Activity</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>RRC_IDLE</td><td>No RRC connection. UE knows its tracking area, performs cell reselection.</td><td>Monitors paging; no data transfer; low power.</td></tr>
+      <tr><td>RRC_CONNECTED</td><td>RRC connection established with eNB. EPS bearer active.</td><td>Data transfer possible; eNB tracks UE at cell level.</td></tr>
+      <tr><td>EMM-DEREGISTERED</td><td>NAS-level state: not attached to MME.</td><td>Must perform Attach procedure first.</td></tr>
+      <tr><td>EMM-REGISTERED</td><td>NAS-level state: attached, has IP address.</td><td>Can initiate service requests; default bearer active.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<!-- SECTION 5 -->
+<!-- ============================================================ -->
+<div class="section" id="s5">
+  <span class="section-label">// SECTION 05</span>
+  <h2>Evolved Packet Core (EPC)</h2>
+
+  <p>The Evolved Packet Core (EPC) is the heart of the LTE system, handling all control-plane and user-plane functions for the mobile network. It replaces the GPRS Core and 3G CN with a unified, all-IP architecture. The EPC consists of several distinct functional entities, each with specialized roles.</p>
+
+  <div class="arch-diagram">
+    <pre>
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │                     EVOLVED PACKET CORE (EPC)                        │
+  │                                                                      │
+  │   ┌─────────┐        S6a        ┌─────────┐                         │
+  │   │   MME   │◄─────────────────►│   HSS   │                         │
+  │   │(Control)│                   └─────────┘                         │
+  │   └────┬────┘                                                        │
+  │        │ S11                    ┌─────────┐        Gx                │
+  │        │                        │  PCRF   │◄───────────────────┐    │
+  │   ┌────┴────┐   S5/S8   ┌──────┴──┐      └────────────────────┘    │
+  │   │   SGW   │◄─────────►│   PGW   │                                 │
+  │   │(Transit)│           │(Anchor) │                                  │
+  │   └─────────┘           └────┬────┘                                 │
+  │                              │ SGi                                   │
+  │                         ┌────┴────┐                                  │
+  │                         │Internet /│                                 │
+  │                         │  IMS     │                                 │
+  │                         └─────────┘                                 │
+  └──────────────────────────────────────────────────────────────────────┘
+    </pre>
+  </div>
+
+  <p>The EPC nodes communicate using several protocols: Diameter (for control plane between MME-HSS, PCRF-PGW), GTPv2 (for session management between MME-SGW-PGW), and GTPv1-U (for user-plane tunneling between eNB-SGW and SGW-PGW).</p>
+</div>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<!-- SECTION 6 -->
+<!-- ============================================================ -->
+<div class="section" id="s6">
+  <span class="section-label">// SECTION 06</span>
+  <h2>MME — Mobility Management Entity</h2>
+
+  <p>The Mobility Management Entity (MME) is the key control-plane node in the EPC. It handles all signalling for UE attachment, authentication, session management, and mobility. The MME does not process user-plane data — it only handles control messages.</p>
+
+  <h3>MME Functions</h3>
+
+  <div class="flow-step">
+    <div class="step-num">NAS</div>
+    <div class="step-body">
+      <div class="step-title">NAS Signalling Termination</div>
+      <div class="step-desc">The MME terminates the Non-Access Stratum (NAS) protocol from the UE. NAS messages are transparently carried by RRC at the radio layer (via eNB) and terminated at the MME. NAS handles EMM (EPS Mobility Management) and ESM (EPS Session Management) procedures.</div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="step-num">AUTH</div>
+    <div class="step-body">
+      <div class="step-title">Authentication &amp; Security</div>
+      <div class="step-desc">The MME initiates AKA (Authentication and Key Agreement) with the HSS to authenticate the UE. It generates security keys (KeNB for RRC/UP encryption, NAS keys for NAS protection) and manages ciphering/integrity algorithms (AES, SNOW 3G, ZUC).</div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="step-num">IDLE</div>
+    <div class="step-body">
+      <div class="step-title">Idle Mode Tracking</div>
+      <div class="step-desc">In RRC_IDLE mode, the MME tracks UE location at the Tracking Area (TA) level. A Tracking Area List (TAL) is assigned to the UE so it doesn't need to update for every cell change within the list. When data arrives for an idle UE, the MME triggers paging across all eNBs in the UE's tracking area.</div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="step-num">SGSN</div>
+    <div class="step-body">
+      <div class="step-title">S3 Interface (SGSN Interworking)</div>
+      <div class="step-desc">For inter-RAT handovers (LTE ↔ 3G/2G), the MME interworks with the 3G SGSN via the S3 interface using GTPv2-C. Context transfers allow seamless handovers between LTE and legacy networks.</div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="step-num">LOAD</div>
+    <div class="step-body">
+      <div class="step-title">MME Pool and Load Balancing</div>
+      <div class="step-desc">Multiple MMEs can form a pool (S10 interface). When a UE attaches, the eNB selects an MME from the pool using a load-balancing algorithm. Intra-pool handovers use S10 for context transfer between MMEs.</div>
+    </div>
+  </div>
+
+  <h3>MME Key Data Structures</h3>
+  <table class="data-table">
+    <thead>
+      <tr><th>Entity</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>IMSI</td><td>International Mobile Subscriber Identity — 15-digit globally unique subscriber identifier stored on the SIM card.</td></tr>
+      <tr><td>GUTI</td><td>Globally Unique Temporary Identifier — assigned by MME to replace IMSI over the air, protecting subscriber privacy.</td></tr>
+      <tr><td>TAI</td><td>Tracking Area Identity = MCC + MNC + TAC. Identifies a geographic area for paging.</td></tr>
+      <tr><td>EPS Bearer ID</td><td>5-bit identifier (1–15) uniquely identifying a bearer for a UE at the radio level.</td></tr>
+      <tr><td>TEID</td><td>Tunnel Endpoint Identifier — 32-bit value used in GTP tunnels to multiplex multiple bearers on S1-U and S5/S8.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<!-- SECTION 7 -->
+<!-- ============================================================ -->
+<div class="section" id="s7">
+  <span class="section-label">// SECTION 07</span>
+  <h2>Serving Gateway (SGW)</h2>
+
+  <p>The Serving Gateway (SGW) is the user-plane anchor for LTE. It routes and forwards data packets between the E-UTRAN and the PGW. The SGW is also the mobility anchor for intra-LTE handovers and inter-3GPP-RAT mobility.</p>
+
+  <h3>SGW Primary Functions</h3>
+
+  <div class="cards">
+    <div class="card blue">
+      <div class="card-tag">ROUTING</div>
+      <h4>Data Path Routing</h4>
+      <p>Maintains GTP-U tunnels on both the S1-U interface (toward eNB) and S5/S8 interface (toward PGW). Acts as the forwarding node, switching GTP packets between these interfaces per bearer.</p>
+    </div>
+    <div class="card green">
+      <div class="card-tag">MOBILITY</div>
+      <h4>Handover Anchor</h4>
+      <p>During X2 handover, the SGW maintains the existing S5/S8 tunnel to the PGW while the S1-U tunnel is switched to the target eNB. This prevents data loss and avoids PGW reanchoring for local mobility.</p>
+    </div>
+    <div class="card orange">
+      <div class="card-tag">CHARGING</div>
+      <h4>Lawful Intercept &amp; Charging</h4>
+      <p>Performs packet counting and charging data record (CDR) generation for offline charging. Also interfaces with the Packet Data Network (PDN) for lawful interception requirements on the S1-U path.</p>
+    </div>
+    <div class="card purple">
+      <div class="card-tag">BUFFER</div>
+      <h4>Downlink Buffering</h4>
+      <p>When a UE is in RRC_IDLE state, the SGW buffers incoming downlink packets and triggers paging via the MME. This ensures no packets are lost while the UE reestablishes its radio connection.</p>
+    </div>
+  </div>
+
+  <h3>SGW Tunnel Switching Model</h3>
+  <div class="arch-diagram">
+    <pre>
+  Downlink path (Internet → UE):
+
+  PGW ──[S5/S8 GTP tunnel]──► SGW ──[S1-U GTP tunnel]──► eNB ──[LTE-Uu]──► UE
+
+  Each arrow represents a GTP-U tunnel with unique TEIDs (Tunnel Endpoint IDs):
+  - S5/S8:  TEID_PGW_UL  ↔  TEID_SGW_DL
+  - S1-U:   TEID_SGW_UL  ↔  TEID_eNB_DL
+
+  The SGW maintains a forwarding table:
+  ┌──────────────────┬───────────────────┬───────────────────┐
+  │  Bearer ID (EBI) │  S1-U (eNB side)  │  S5 (PGW side)    │
+  ├──────────────────┼───────────────────┼───────────────────┤
+  │      EBI=5       │  TEID=0xABC → IP  │  TEID=0x123 → IP  │
+  │      EBI=6       │  TEID=0xDEF → IP  │  TEID=0x456 → IP  │
+  └──────────────────┴───────────────────┴───────────────────┘
+    </pre>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<!-- SECTION 8 -->
+<!-- ============================================================ -->
+<div class="section" id="s8">
+  <span class="section-label">// SECTION 08</span>
+  <h2>PDN Gateway (PGW)</h2>
+
+  <p>The PDN Gateway (PGW) is the topmost anchor point in the EPC user plane. It connects the EPC to external Packet Data Networks (PDNs) such as the Internet, corporate intranets, or the IMS (IP Multimedia Subsystem) for VoLTE. The PGW is the persistent IP anchor — regardless of how the UE moves, its IP address and PGW association remain stable.</p>
+
+  <h3>PGW Functions</h3>
+
+  <div class="flow-step">
+    <div class="step-num">IPAM</div>
+    <div class="step-body">
+      <div class="step-title">IP Address Allocation</div>
+      <div class="step-desc">The PGW allocates IPv4 and/or IPv6 addresses to UEs upon PDN connection establishment. Addresses may be statically assigned per subscriber (from HSS) or dynamically assigned from a pool using DHCP or internal allocation. The PGW acts as the UE's default gateway for all data traffic.</div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="step-num">TFT</div>
+    <div class="step-body">
+      <div class="step-title">Traffic Flow Templates (TFT) and Packet Filtering</div>
+      <div class="step-desc">The PGW applies packet filters (TFTs) to map IP flows to specific EPS bearers. A TFT defines matching criteria: source/destination IP address, port ranges, protocol type, and ToS/DSCP. This enables QoS differentiation — for example, routing VoIP RTP streams to a dedicated GBR bearer while HTTP goes on the default bearer.</div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="step-num">PCEF</div>
+    <div class="step-body">
+      <div class="step-title">Policy and Charging Enforcement Function (PCEF)</div>
+      <div class="step-desc">The PGW hosts the PCEF, which enforces policies received from the PCRF via the Gx interface. These include QoS enforcement (maximum bitrate, guaranteed bitrate), gating control (allow/block specific flows), and online/offline charging triggers. The PGW is where per-flow policing and metering happens.</div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="step-num">NAT</div>
+    <div class="step-body">
+      <div class="step-title">NAT and IPv4/IPv6 Translation</div>
+      <div class="step-desc">When UE connectivity is IPv4 but the network uses IPv6 (or vice versa), the PGW can perform NAT64/DNS64 translation. In large networks with limited public IPv4 space, the PGW may perform NAPT (Network Address and Port Translation), mapping multiple UEs to fewer public IPs.</div>
+    </div>
+  </div>
+
+  <h3>Multiple PDN Connections</h3>
+  <p>A UE can simultaneously maintain connections to multiple PDNs through a single PGW or multiple PGWs. For example, a UE might have one PDN connection to the Internet and another to the IMS network for VoLTE. Each PDN connection has its own IP address and set of bearers.</p>
+</div>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<!-- SECTION 9 -->
+<!-- ============================================================ -->
+<div class="section" id="s9">
+  <span class="section-label">// SECTION 09</span>
+  <h2>HSS — Home Subscriber Server</h2>
+
+  <p>The Home Subscriber Server (HSS) is the central database of the LTE core network. It stores all subscriber-related information and is the authoritative source for authentication credentials, subscription data, and roaming permissions. The HSS is the evolution of the HLR (Home Location Register) used in 2G/3G networks.</p>
+
+  <h3>HSS Stored Information</h3>
+  <table class="data-table">
+    <thead>
+      <tr><th>Data Category</th><th>Details</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Subscriber Identity</td><td>IMSI, MSISDN (phone number), subscriber profile ID.</td></tr>
+      <tr><td>Authentication Vectors</td><td>Long-term key K (128-bit) stored on both HSS and SIM. Used to generate AV = {RAND, XRES, AUTN, KASME} via MILENAGE/TUAK algorithm.</td></tr>
+      <tr><td>Subscription Data</td><td>Allowed APNs (Access Point Names), QoS profiles per APN, subscribed maximum bitrates (AMBR), service restrictions.</td></tr>
+      <tr><td>Location Data</td><td>Current serving MME address (S6a interface). Used to route mobile-terminated services.</td></tr>
+      <tr><td>Roaming Info</td><td>Roaming allowed/prohibited per PLMN, ODB (Operator Determined Barring) flags.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>S6a Interface (MME ↔ HSS)</h3>
+  <p>The S6a interface uses the Diameter protocol (RFC 3588 / 3GPP TS 29.272). Key Diameter command codes used on S6a:</p>
+
+  <ul class="iface-list">
+    <li><span class="iname">AIR/AIA</span> Authentication-Information-Request/Answer — MME requests authentication vectors for UE.</li>
+    <li><span class="iname">ULR/ULA</span> Update-Location-Request/Answer — MME registers UE location, HSS returns subscription data.</li>
+    <li><span class="iname">CLR/CLA</span> Cancel-Location-Request/Answer — HSS cancels UE registration at old MME during roaming.</li>
+    <li><span class="iname">IDR/IDA</span> Insert-Subscriber-Data-Request/Answer — HSS pushes updated subscription to MME.</li>
+    <li><span class="iname">DSR/DSA</span> Delete-Subscriber-Data-Request/Answer — HSS removes subscription data from MME.</li>
+    <li><span class="iname">PUR/PUA</span> Purge-UE-Request/Answer — MME informs HSS when UE is purged (e.g., long inactivity).</li>
+    <li><span class="iname">RSR/RSA</span> Reset-Request/Answer — HSS notifies MME of reset event.</li>
+    <li><span class="iname">NOR/NOA</span> Notify-Request/Answer — MME notifies HSS of UE reachability.</li>
+  </ul>
+</div>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<!-- SECTION 10 -->
+<!-- ============================================================ -->
+<div class="section" id="s10">
+  <span class="section-label">// SECTION 10</span>
+  <h2>PCRF — Policy and Charging Rules Function</h2>
+
+  <p>The Policy and Charging Rules Function (PCRF) is the intelligence center for QoS and charging policy in the EPC. It generates Policy and Charging Control (PCC) rules that govern how the PGW (PCEF) handles individual IP flows — determining their allowed bitrates, charging methods, and gating policies.</p>
+
+  <h3>PCRF Interfaces</h3>
+  <ul class="iface-list">
+    <li><span class="iname">Gx</span> PCRF ↔ PGW (PCEF). Delivers PCC rules for session and flow management. Uses Diameter.</li>
+    <li><span class="iname">Rx</span> PCRF ↔ IMS/P-CSCF. IMS signals media parameters (SDP) to PCRF, which authorizes corresponding QoS bearers for VoLTE.</li>
+    <li><span class="iname">Sd</span> PCRF ↔ TDF (Traffic Detection Function). Deep Packet Inspection (DPI) results inform PCRF policy decisions.</li>
+    <li><span class="iname">Sy</span> PCRF ↔ OCS (Online Charging System). PCRF consults OCS for spending limits in pre-paid sessions.</li>
+    <li><span class="iname">S9</span> H-PCRF ↔ V-PCRF. In roaming scenarios, the home PCRF coordinates with the visited PCRF.</li>
+  </ul>
+
+  <h3>PCC Rule Structure</h3>
+  <div class="arch-diagram">
+    <pre>
+  A PCC Rule contains:
+  ┌──────────────────────────────────────────────────────┐
+  │  PCC Rule Name: "voip-voice-rule"                    │
+  │  ─────────────────────────────────────────────────  │
+  │  Service Data Flow Filter (TFT):                     │
+  │    Protocol: UDP                                     │
+  │    Port Range: 20000–40000 (RTP)                    │
+  │    Direction: Bidirectional                          │
+  │                                                      │
+  │  QoS Parameters:                                     │
+  │    QCI: 1 (Conversational Voice)                    │
+  │    GBR DL: 24 kbps   GBR UL: 24 kbps               │
+  │    MBR DL: 24 kbps   MBR UL: 24 kbps               │
+  │    ARP Priority: 2, Pre-emption Capability: No       │
+  │                                                      │
+  │  Charging Rules:                                     │
+  │    Online Charging: Yes  Rating Group: 100           │
+  │    Reporting Level: Service Data Flow Level          │
+  └──────────────────────────────────────────────────────┘
+    </pre>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<!-- SECTION 11 -->
+<!-- ============================================================ -->
+<div class="section" id="s11">
+  <span class="section-label">// SECTION 11</span>
+  <h2>Interfaces &amp; Reference Points</h2>
+
+  <p>LTE defines a rich set of interfaces between its nodes. Each interface has a specific name, uses defined protocols, and carries specific types of messages. Understanding these interfaces is essential to understanding how the various nodes interact.</p>
+
+  <table class="data-table">
+    <thead>
+      <tr><th>Interface</th><th>Between</th><th>Protocol</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>LTE-Uu</td><td>UE ↔ eNB</td><td>RRC, PDCP, RLC, MAC, PHY</td><td>Air interface — radio resource management, data transmission.</td></tr>
+      <tr><td>S1-MME</td><td>eNB ↔ MME</td><td>S1AP over SCTP/IP</td><td>Control plane: UE context setup, handover, paging, NAS transport.</td></tr>
+      <tr><td>S1-U</td><td>eNB ↔ SGW</td><td>GTP-U over UDP/IP</td><td>User plane: encapsulated user data in GTP tunnels.</td></tr>
+      <tr><td>X2-C</td><td>eNB ↔ eNB</td><td>X2AP over SCTP/IP</td><td>X2 handover control, load indication, resource status.</td></tr>
+      <tr><td>X2-U</td><td>eNB ↔ eNB</td><td>GTP-U over UDP/IP</td><td>X2 data forwarding during handover.</td></tr>
+      <tr><td>S5/S8</td><td>SGW ↔ PGW</td><td>GTPv2-C (ctrl) / GTP-U (data)</td><td>Session management and user data between SGW and PGW. S8 = roaming variant.</td></tr>
+      <tr><td>S6a</td><td>MME ↔ HSS</td><td>Diameter over SCTP/IP</td><td>Authentication, subscription data, location updates.</td></tr>
+      <tr><td>S10</td><td>MME ↔ MME</td><td>GTPv2-C</td><td>UE context transfer during inter-MME handovers.</td></tr>
+      <tr><td>S11</td><td>MME ↔ SGW</td><td>GTPv2-C</td><td>Session management: bearer create/modify/delete, handover.</td></tr>
+      <tr><td>S3</td><td>MME ↔ SGSN</td><td>GTPv2-C</td><td>Inter-RAT handover context transfer (LTE ↔ 3G).</td></tr>
+      <tr><td>Gx</td><td>PGW ↔ PCRF</td><td>Diameter</td><td>PCC rule provisioning and charging control.</td></tr>
+      <tr><td>Rx</td><td>PCRF ↔ IMS</td><td>Diameter</td><td>Media authorization for IMS sessions (VoLTE).</td></tr>
+      <tr><td>SGi</td><td>PGW ↔ PDN</td><td>IP (standard)</td><td>Interface to external networks (Internet, IMS, corporate).</td></tr>
+      <tr><td>S13</td><td>MME ↔ EIR</td><td>Diameter</td><td>IMEI checking against Equipment Identity Register.</td></tr>
+      <tr><td>SBc</td><td>MME ↔ CBC</td><td>SBcAP</td><td>Cell Broadcast for emergency alerts (ETWS, CMAS).</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<!-- SECTION 12 -->
+<!-- ============================================================ -->
+<div class="section" id="s12">
+  <span class="section-label">// SECTION 12</span>
+  <h2>Protocol Stack</h2>
+
+  <p>LTE uses a layered protocol architecture. The user plane and control plane have distinct protocol stacks, though they share some lower layers. Understanding the protocol stack helps trace exactly how data and signalling travel from the UE to the core network.</p>
+
+  <h3>Control Plane Protocol Stack</h3>
+  <div class="arch-diagram">
+    <pre>
+  UE                    eNB                     MME
+
+  ┌───────┐            ┌───────┐             ┌───────┐
+  │  NAS  │─────────────────────────────────►│  NAS  │
+  ├───────┤            ├───────┤             └───────┘
+  │  RRC  │◄──────────►│  RRC  │
+  ├───────┤            ├───────┤             ┌───────┐
+  │ PDCP  │◄──────────►│ PDCP  │             │ S1AP  │◄────────► MME S1AP
+  ├───────┤            ├───────┤             ├───────┤
+  │  RLC  │◄──────────►│  RLC  │             │ SCTP  │
+  ├───────┤            ├───────┤             ├───────┤
+  │  MAC  │◄──────────►│  MAC  │             │  IP   │
+  ├───────┤            ├───────┤             └───────┘
+  │  PHY  │◄──────────►│  PHY  │
+  └───────┘            └───────┘
+  
+  NAS messages are carried transparently through RRC (as NAS containers)
+    </pre>
+  </div>
+
+  <h3>User Plane Protocol Stack</h3>
+  <div class="arch-diagram">
+    <pre>
+  UE          eNB          SGW          PGW          Internet
+
+  ┌────┐     ┌────┐       ┌────┐       ┌────┐
+  │ IP │─────────────────────────────►│ IP │────────► External
+  ├────┤     ├────┤       ├────┤       ├────┤
+  │PDCP│◄───►│PDCP│       │GTP │◄─────►│GTP │
+  ├────┤     ├────┤       ├────┤       ├────┤
+  │ RLC│◄───►│RLC │       │UDP │       │UDP │
+  ├────┤     ├────┤       ├────┤       ├────┤
+  │ MAC│◄───►│MAC │       │ IP │       │ IP │
+  ├────┤     ├────┤       ├────┤       ├────┤
+  │ PHY│◄───►│PHY │       │L2  │       │L2  │
+  └────┘     └────┘       └────┘       └────┘
+             ╔════╗       ╔════╗
+             ║S1-U║       ║S5/8║
+             ╚════╝       ╚════╝
+    </pre>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<!-- SECTION 13 -->
+<!-- ============================================================ -->
+<div class="section" id="s13">
+  <span class="section-label">// SECTION 13</span>
+  <h2>Radio Protocol Layers</h2>
+
+  <h3>PHY — Physical Layer</h3>
+  <p>The Physical Layer (PHY) handles all radio transmission and reception. LTE uses OFDMA (Orthogonal Frequency Division Multiple Access) in the downlink and SC-FDMA (Single-Carrier FDMA) in the uplink. Key PHY concepts:</p>
+
+  <table class="data-table">
+    <thead>
+      <tr><th>Concept</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Resource Block (RB)</td><td>Basic scheduling unit: 12 subcarriers × 7 OFDM symbols = 1 slot (0.5 ms). 2 slots = 1 subframe = 1 TTI = 1 ms.</td></tr>
+      <tr><td>Subcarrier Spacing</td><td>15 kHz standard spacing. Each RB is 180 kHz wide (12×15 kHz). 20 MHz channel = 100 RBs.</td></tr>
+      <tr><td>Frame Structure</td><td>10 ms radio frame → 10 subframes → 20 slots. FDD: all subframes bidirectional. TDD: configurable UL/DL ratio.</td></tr>
+      <tr><td>Reference Signals</td><td>CRS (Cell-Specific RS) for channel estimation. DM-RS (Demodulation RS) for PDSCH. CSI-RS (Channel State Info RS) for feedback.</td></tr>
+      <tr><td>PDSCH</td><td>Physical Downlink Shared Channel — carries user data. Modulation: QPSK, 16/64/256-QAM.</td></tr>
+      <tr><td>PUSCH</td><td>Physical Uplink Shared Channel — carries UE uplink data using SC-FDMA. Same MCS options as DL.</td></tr>
+      <tr><td>PDCCH</td><td>Physical Downlink Control Channel — carries Downlink Control Information (DCI) for scheduling grants.</td></tr>
+      <tr><td>PUCCH</td><td>Physical Uplink Control Channel — carries UCI: CQI, HARQ-ACK, Scheduling Request (SR).</td></tr>
+      <tr><td>PRACH</td><td>Physical Random Access Channel — UE uses this for initial random access using Zadoff-Chu sequences.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>MAC — Medium Access Control</h3>
+  <p>The MAC layer sits above PHY and manages: multiplexing of logical channels, HARQ operation, random access procedure, scheduling request, and BSR (Buffer Status Reporting). The MAC communicates with the PHY via transport channels (DL: DL-SCH, BCH, PCH; UL: UL-SCH, RACH).</p>
+
+  <h3>RLC — Radio Link Control</h3>
+  <p>RLC operates above MAC and provides three modes:</p>
+
+  <div class="cards">
+    <div class="card blue">
+      <div class="card-tag">MODE</div>
+      <h4>TM — Transparent Mode</h4>
+      <p>No RLC header added. Used for BCCH (broadcast) and CCCH (initial connection). No segmentation or ARQ.</p>
+    </div>
+    <div class="card green">
+      <div class="card-tag">MODE</div>
+      <h4>UM — Unacknowledged Mode</h4>
+      <p>One-way delivery without ARQ. Used for real-time services like VoIP where retransmission would be too late. Supports segmentation and reordering.</p>
+    </div>
+    <div class="card orange">
+      <div class="card-tag">MODE</div>
+      <h4>AM — Acknowledged Mode</h4>
+      <p>Full ARQ with STATUS PDUs confirming successful delivery. Used for TCP data where reliability is required. Supports segmentation, reassembly, and reordering.</p>
+    </div>
+  </div>
+
+  <h3>PDCP — Packet Data Convergence Protocol</h3>
+  <p>PDCP sits above RLC and provides: IP header compression (ROHC — Robust Header Compression), ciphering of user-plane data and RRC signalling, integrity protection of RRC signalling, and in-sequence delivery/reordering during handovers. During handover, PDCP provides PDCP SDU reordering so packets are delivered to the higher layers in sequence despite the disruption caused by the handover.</p>
+</div>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<!-- SECTION 14 — ATTACH PROCEDURE -->
+<!-- ============================================================ -->
+<div class="section" id="s14">
+  <span class="section-label">// SECTION 14</span>
+  <h2>LTE Attach Procedure</h2>
+
+  <p>The Attach procedure is the most fundamental LTE call flow. It establishes the UE's presence in the network, performs authentication, activates the default EPS bearer, and brings the UE to EMM-REGISTERED/ECM-CONNECTED state. The entire procedure typically takes 1–3 seconds.</p>
+
+  <div class="arch-diagram">
+    <pre>
+   UE          eNB          MME          HSS          SGW          PGW          PCRF
+
+    │            │            │            │            │            │            │
+    │──1─────────│            │            │            │            │            │
+    │  RACH Procedure         │            │            │            │            │
+    │◄─2─────────│            │            │            │            │            │
+    │  RRC Connection Setup   │            │            │            │            │
+    │──3─────────│──────────► │            │            │            │            │
+    │  Attach Request (NAS)   │            │            │            │            │
+    │            │            │──4────────►│            │            │            │
+    │            │            │  AIR (Auth Info Req)    │            │            │
+    │            │            │◄──5────────│            │            │            │
+    │            │            │  AIA (Auth Info Ans)    │            │            │
+    │◄───────────│────────────│6           │            │            │            │
+    │  Auth Request (NAS)     │            │            │            │            │
+    │──7─────────│──────────► │            │            │            │            │
+    │  Auth Response (NAS)    │            │            │            │            │
+    │            │            │──8────────►│            │            │            │
+    │            │            │  ULR (Update Loc Req)  │            │            │
+    │            │            │◄──9────────│            │            │            │
+    │            │            │  ULA (Update Loc Ans)  │            │            │
+    │            │            │──10──────────────────► │            │            │
+    │            │            │  Create Session Req    │            │            │
+    │            │            │            │            │──11───────►│            │
+    │            │            │            │            │  Create Session Req     │
+    │            │            │            │            │            │──12───────►│
+    │            │            │            │            │            │  CCR-I (Gx)│
+    │            │            │            │            │            │◄──13───────│
+    │            │            │            │            │            │  CCA-I     │
+    │            │            │            │◄───────────│────────────│14          │
+    │            │            │◄──15───────│────────────│            │            │
+    │            │            │  Create Session Rsp    │            │            │
+    │◄───────────│────────────│16          │            │            │            │
+    │  Attach Accept + Activate Default Bearer Req     │            │            │
+    │──17────────│            │            │            │            │            │
+    │  RRC Connection Reconfiguration Complete         │            │            │
+    │──18────────│──────────► │            │            │            │            │
+    │  Attach Complete (NAS)  │            │            │            │            │
+    │            │            │──19───────────────────►│            │            │
+    │            │            │  Modify Bearer Req     │            │            │
+    │            │            │◄──20───────────────────│            │            │
+    │            │            │  Modify Bearer Rsp     │            │            │
+    │            │            │            │            │            │            │
+    │═══════════════════════════════════════════════════════════════════════════ │
+    │              UE is ATTACHED — IP connectivity established                  │
+    </pre>
+  </div>
+
+  <h3>Step-by-Step Explanation</h3>
+
+  <div class="flow-step">
+    <div class="step-num">STEP 1–2</div>
+    <div class="step-body">
+      <div class="step-title">Random Access (RACH)</div>
+      <div class="step-desc">The UE initiates random access on the PRACH. It sends a preamble (one of 64 Zadoff-Chu sequences from PRACH configuration). The eNB responds with a Random Access Response (RAR) containing: timing advance (TA) to synchronize uplink, temporary C-RNTI for identification, and UL grant for the RRC Connection Request.</div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="step-num">STEP 2</div>
+    <div class="step-body">
+      <div class="step-title">RRC Connection Setup</div>
+      <div class="step-desc">The UE sends an RRC Connection Request message (on CCCH) containing its identity (S-TMSI if known, or random value) and establishment cause (e.g., "mo-Signalling"). The eNB responds with RRC Connection Setup, configuring initial SRB1 (Signalling Radio Bearer 1) with RLC-AM. The UE completes setup with RRC Connection Setup Complete, which carries the NAS Attach Request in a container.</div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="step-num">STEP 3</div>
+    <div class="step-body">
+      <div class="step-title">NAS Attach Request</div>
+      <div class="step-desc">The eNB extracts the NAS Attach Request from the RRC message and forwards it to the MME via S1AP INITIAL UE MESSAGE. The Attach Request contains: UE identity (IMSI or old GUTI), UE network capability (supported ciphering/integrity algorithms, voice domain preference), PDN connectivity request (requested APN, PDN type), and last visited TAI.</div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="step-num">STEP 4–5</div>
+    <div class="step-body">
+      <div class="step-title">Authentication Vector Request</div>
+      <div class="step-desc">The MME sends a Diameter Authentication-Information-Request (AIR) to the HSS over S6a, requesting authentication vectors (AVs) for the IMSI. The HSS generates Authentication Vectors using the MILENAGE algorithm with the subscriber's secret key K and a random number RAND. Each AV contains: RAND (128-bit random), XRES (expected response), AUTN (authentication token), and KASME (session key). The HSS returns multiple AVs (typically 5) in the AIA response.</div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="step-num">STEP 6–7</div>
+    <div class="step-body">
+      <div class="step-title">Authentication (AKA)</div>
+      <div class="step-desc">The MME selects one AV and sends the Authentication Request NAS message to the UE containing RAND and AUTN. The UE's SIM verifies the AUTN using its own copy of K — this authenticates the network to the UE (mutual authentication). The SIM computes RES (response) and returns it in the Authentication Response. The MME compares RES with XRES from the AV — if they match, the UE is authenticated. Both the UE and MME now independently derive the same KASME, from which all subsequent security keys are derived.</div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="step-num">STEP 8</div>
+    <div class="step-body">
+      <div class="step-title">Security Mode Command</div>
+      <div class="step-desc">The MME selects NAS security algorithms and sends a NAS Security Mode Command, which is integrity-protected using the derived NAS integrity key (KNASint). The UE activates NAS security and responds with Security Mode Complete. From this point, all NAS messages are ciphered and integrity-protected.</div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="step-num">STEP 8–9</div>
+    <div class="step-body">
+      <div class="step-title">Update Location (HSS Registration)</div>
+      <div class="step-desc">The MME sends an Update-Location-Request (ULR) to the HSS to register itself as the UE's serving MME. The HSS responds with ULA containing the subscriber's subscription data: allowed APNs, QoS profiles per APN, subscribed UE-AMBR (Aggregate Maximum Bit Rate). The HSS also sends a Cancel-Location-Request (CLR) to the previous MME (if any) to deregister the UE there.</div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="step-num">STEP 10–15</div>
+    <div class="step-body">
+      <div class="step-title">Default Bearer Establishment</div>
+      <div class="step-desc">The MME sends a Create Session Request to the SGW (GTPv2-C, S11 interface) containing: IMSI, APN, PDN type (IPv4/IPv6/IPv4v6), serving network, RAT type, UE-AMBR, and default bearer QoS (QCI=9, ARP). The SGW forwards a Create Session Request to the PGW (S5/S8). The PGW interacts with the PCRF (CCR-Initial/CCA-Initial on Gx) to obtain PCC rules. The PGW allocates an IP address for the UE and returns a Create Session Response with the allocated IP and TEID. This response propagates back through SGW to MME.</div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="step-num">STEP 16</div>
+    <div class="step-body">
+      <div class="step-title">Attach Accept</div>
+      <div class="step-desc">The MME sends an Attach Accept (NAS) message to the eNB via S1AP INITIAL CONTEXT SETUP REQUEST. This S1AP message also includes: UE security context (KeNB and selected algorithms), E-RAB (Radio Access Bearer) parameters (QCI, ARP, GBR if any), and SGW S1-U TEID and IP address. The eNB uses this to set up the radio bearer and S1-U GTP tunnel to the SGW.</div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="step-num">STEP 17</div>
+    <div class="step-body">
+      <div class="step-title">RRC Connection Reconfiguration</div>
+      <div class="step-desc">The eNB sends an RRC Connection Reconfiguration message to the UE, adding SRB2 (Signalling Radio Bearer 2, for NAS integrity-protected messages) and DRB1 (Data Radio Bearer, the actual user data bearer). The message includes radio bearer configuration: PDCP, RLC, MAC parameters, and logical channel configuration. The UE applies the configuration and responds with RRC Connection Reconfiguration Complete. The NAS Attach Accept is delivered to the UE within this RRC message.</div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="step-num">STEP 18</div>
+    <div class="step-body">
+      <div class="step-title">Attach Complete</div>
+      <div class="step-desc">The UE sends a NAS Attach Complete message to the MME (carried in RRC UL Information Transfer). This acknowledges the Attach Accept and completes the attach signalling. The UE now has a GUTI assigned by the MME for future identification.</div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="step-num">STEP 19–20</div>
+    <div class="step-body">
+      <div class="step-title">Modify Bearer (S1-U Path Completion)</div>
+      <div class="step-desc">The MME sends a Modify Bearer Request to the SGW containing the eNB's S1-U TEID and IP address. The SGW now knows where to forward downlink user data (to the eNB), completing the end-to-end data path: Internet → PGW → SGW → eNB → UE. The SGW responds with Modify Bearer Response. The UE can now send and receive data.</div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<!-- SECTION 15 -->
+<!-- ============================================================ -->
+<div class="section" id="s15">
+  <span class="section-label">// SECTION 15</span>
+  <h2>Default Bearer Setup</h2>
+
+  <p>The default EPS bearer is established during the Attach procedure. It provides always-on IP connectivity for the UE. Every UE must have at least one default bearer — it cannot exist in the network without one. The default bearer uses a non-GBR (non-Guaranteed Bit Rate) QoS class, typically QCI=9 (best-effort internet).</p>
+
+  <h3>Bearer Identity and Numbering</h3>
+  <table class="data-table">
+    <thead>
+      <tr><th>Identifier</th><th>Scope</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>EPS Bearer ID (EBI)</td><td>UE + MME</td><td>5-bit ID (values 5–15) identifying bearer at NAS level. EBI=5 is typically the first default bearer.</td></tr>
+      <tr><td>E-RAB ID</td><td>eNB + MME</td><td>Same value as EBI. Identifies the E-UTRAN Radio Access Bearer (E-RAB) on S1.</td></tr>
+      <tr><td>DRB ID</td><td>UE + eNB</td><td>Radio Bearer ID at the RRC level. Maps to E-RAB/EBI.</td></tr>
+      <tr><td>S1-U TEID</td><td>eNB + SGW</td><td>GTP Tunnel Endpoint ID for S1-U tunnel. Each bearer has its own TEID pair.</td></tr>
+      <tr><td>S5/S8 TEID</td><td>SGW + PGW</td><td>GTP Tunnel Endpoint ID for S5/S8 tunnel.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Default Bearer QoS Parameters</h3>
+  <div class="highlight">
+    <p>Default bearers are non-GBR — they have no guaranteed bitrate. They share available bandwidth with other best-effort traffic. The PGW enforces the UE-AMBR (UE Aggregate Maximum Bit Rate), which limits the combined throughput of all non-GBR bearers for a subscriber. Typical UE-AMBR for a standard data plan might be 100 Mbps DL / 50 Mbps UL.</p>
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr><th>QCI</th><th>Type</th><th>Priority</th><th>Delay Budget</th><th>Typical Use</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>QCI 1</td><td>GBR</td><td>2</td><td>100 ms</td><td>Conversational Voice (VoLTE)</td></tr>
+      <tr><td>QCI 2</td><td>GBR</td><td>4</td><td>150 ms</td><td>Conversational Video (live streaming)</td></tr>
+      <tr><td>QCI 3</td><td>GBR</td><td>3</td><td>50 ms</td><td>Real-time gaming</td></tr>
+      <tr><td>QCI 4</td><td>GBR</td><td>5</td><td>300 ms</td><td>Non-conversational video (buffered)</td></tr>
+      <tr><td>QCI 5</td><td>Non-GBR</td><td>1</td><td>100 ms</td><td>IMS Signalling</td></tr>
+      <tr><td>QCI 6</td><td>Non-GBR</td><td>6</td><td>300 ms</td><td>Video (buffered streaming, TCP)</td></tr>
+      <tr><td>QCI 7</td><td>Non-GBR</td><td>7</td><td>100 ms</td><td>Voice/Video interactive gaming</td></tr>
+      <tr><td>QCI 8</td><td>Non-GBR</td><td>8</td><td>300 ms</td><td>Video/TCP (high priority)</td></tr>
+      <tr><td>QCI 9</td><td>Non-GBR</td><td>9</td><td>300 ms</td><td>Default bearer — internet browsing, email</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<!-- SECTION 16 -->
+<!-- ============================================================ -->
+<div class="section" id="s16">
+  <span class="section-label">// SECTION 16</span>
+  <h2>Dedicated Bearer Setup</h2>
+
+  <p>While the default bearer handles general internet traffic, dedicated EPS bearers are created for specific traffic flows that require guaranteed or differentiated quality of service. The most common trigger is a VoLTE call, where an IMS session requires a dedicated QCI=1 bearer for the voice RTP stream.</p>
+
+  <h3>Dedicated Bearer Flow (Network-Initiated)</h3>
+
+  <div class="arch-diagram">
+    <pre>
+   UE          eNB          MME          SGW          PGW          PCRF
+
+    │            │            │            │            │            │
+    │            │            │            │            │◄───────────│  (1) Gx: CCR-Update
+    │            │            │            │            │────────────►│  (2) Gx: CCA-Update
+    │            │            │            │◄───────────│  (3) S5: Create Bearer Req (QCI=1)
+    │            │            │◄───────────│  (4) S11: Create Bearer Req
+    │            │◄───────────│  (5) S1AP: E-RAB Setup Req
+    │◄───────────│  (6) RRC: Connection Reconfiguration (add DRB for QCI=1)
+    │────────────│►  (7) RRC: Connection Reconfiguration Complete
+    │            │────────────►│  (8) S1AP: E-RAB Setup Rsp
+    │            │            │────────────►│  (9) S11: Create Bearer Rsp
+    │            │            │            │────────────►│  (10) S5: Create Bearer Rsp
+    │            │            │            │            │────────────►│  (11) Gx: CCR
+    │            │            │            │            │            │
+    │═══════════════════════════════════════════════════════════════ │
+    │       Dedicated bearer active — VoIP RTP now flows on QCI=1   │
+    </pre>
+  </div>
+
+  <h4>Step-by-step:</h4>
+  <p><strong>(1–2)</strong> The PCRF receives an Rx message from the IMS P-CSCF with SDP (media parameters: codec, port, bandwidth) for a new IMS session. The PCRF generates a new PCC rule (QCI=1, GBR=24 kbps for AMR-NB codec) and sends it to the PGW via Gx Credit-Control-Request Update (CCR-U) / Credit-Control-Answer.</p>
+
+  <p><strong>(3)</strong> The PGW initiates dedicated bearer creation by sending a Create Bearer Request to the SGW on S5, including: Linked EPS Bearer ID (the default bearer EBI this is linked to), bearer QoS (QCI=1, GBR/MBR DL/UL), and TFT (Traffic Flow Template — packet filter for the VoIP RTP stream's IP/port/protocol).</p>
+
+  <p><strong>(4)</strong> The SGW forwards the Create Bearer Request to the MME on S11, adding its own S1-U TEID for the new bearer.</p>
+
+  <p><strong>(5–7)</strong> The MME sends an E-RAB Setup Request to the eNB via S1AP. The eNB configures a new DRB (Data Radio Bearer) for the UE via RRC Connection Reconfiguration. The new DRB is configured with the appropriate QoS (QCI=1 maps to scheduler priority and PDCP/RLC parameters). The UE acknowledges.</p>
+
+  <p><strong>(8–10)</strong> The eNB reports success to the MME (E-RAB Setup Response, including eNB S1-U TEID for the new bearer). The MME sends Create Bearer Response to SGW, which forwards to PGW. The complete tunnel is now established: UE ↔ eNB ↔ SGW ↔ PGW.</p>
+</div>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<!-- SECTION 17 -->
+<!-- ============================================================ -->
+<div class="section" id="s17">
+  <span class="section-label">// SECTION 17</span>
+  <h2>Authentication &amp; Security</h2>
+
+  <p>LTE security is one of the most robust aspects of the system, providing mutual authentication, strong encryption, and integrity protection at both the radio and core network levels.</p>
+
+  <h3>LTE Security Architecture</h3>
+  <div class="arch-diagram">
+    <pre>
+  LTE Security Key Hierarchy:
+
+                     K (on SIM/HSS — never transmitted)
+                     │
+                     │ CK, IK (via MILENAGE)
+                     │
+                     ▼
+                  KASME (derived from CK, IK, SQN, PLMN ID)
+                  Shared between UE and MME
+                     │
+          ┌──────────┼──────────┐
+          │          │          │
+          ▼          ▼          ▼
+       KNASenc    KNASint     KeNB
+    (NAS cipher) (NAS integ) (RRC/UP keys)
+                              │
+                    ┌─────────┼─────────┐
+                    │         │         │
+                    ▼         ▼         ▼
+                 KRRCenc   KRRCint   KUPenc
+               (RRC enc) (RRC int) (UP enc)
+    </pre>
+  </div>
+
+  <h3>EPS-AKA (Authentication and Key Agreement)</h3>
+  <p>LTE uses the EPS-AKA procedure, derived from UMTS-AKA but enhanced with improved key derivation and separation:</p>
+
+  <table class="data-table">
+    <thead>
+      <tr><th>Step</th><th>Action</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1. HSS generates AV</td><td>HSS generates RAND (128-bit random), computes MAC-A and XRES using MILENAGE with K and SQN. Produces AUTN = SQN ⊕ AK || AMF || MAC-A.</td></tr>
+      <tr><td>2. MME sends challenge</td><td>MME sends {RAND, AUTN} to UE in Authentication Request.</td></tr>
+      <tr><td>3. UE verifies network</td><td>UE SIM checks AUTN to verify the network is authentic (this is the mutual authentication step — 2G lacked this). If valid, UE computes RES and sends it back.</td></tr>
+      <tr><td>4. MME verifies UE</td><td>MME compares RES (from UE) with XRES (from HSS). Match = UE authenticated.</td></tr>
+      <tr><td>5. Key derivation</td><td>Both sides independently compute KASME from {CK, IK, SQN, PLMN ID}. From KASME, all other keys are derived using KDF (HMAC-SHA-256 based).</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Ciphering Algorithms (EEA)</h3>
+  <ul class="iface-list">
+    <li><span class="iname">EEA0</span> NULL algorithm — no ciphering. Used in emergency calls or when explicitly configured.</li>
+    <li><span class="iname">EEA1</span> SNOW 3G based stream cipher. Optimized for hardware implementation.</li>
+    <li><span class="iname">EEA2</span> AES-CTR mode (128-bit key). Widely deployed, strong security.</li>
+    <li><span class="iname">EEA3</span> ZUC stream cipher. Developed in China, standardized for 3GPP.</li>
+  </ul>
+
+  <h3>Integrity Algorithms (EIA)</h3>
+  <ul class="iface-list">
+    <li><span class="iname">EIA0</span> NULL — no integrity. Not allowed for normal operation (only emergency bearers).</li>
+    <li><span class="iname">EIA1</span> SNOW 3G based MAC-I computation.</li>
+    <li><span class="iname">EIA2</span> AES-CMAC (128-bit key). Most commonly deployed.</li>
+    <li><span class="iname">EIA3</span> ZUC based integrity.</li>
+  </ul>
+
+  <div class="highlight green">
+    <p><strong>Note on User-Plane Integrity:</strong> In LTE Release 8–14, user-plane data is only ciphered (not integrity-protected) at the PDCP layer. NAS and RRC signalling are both ciphered AND integrity-protected. Release 15 introduced optional UP integrity protection for specific scenarios.</p>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<!-- SECTION 18 -->
+<!-- ============================================================ -->
+<div class="section" id="s18">
+  <span class="section-label">// SECTION 18</span>
+  <h2>Handover Procedures</h2>
+
+  <p>Handover (HO) is the process of transferring an active connection from one cell to another while maintaining service continuity. LTE supports several handover types depending on the relationship between source and target nodes.</p>
+
+  <h3>X2 Handover (Intra-LTE, Same MME/SGW)</h3>
+  <p>X2 handover is the most common type. The two eNBs communicate directly via the X2 interface, minimizing core network involvement and achieving the fastest handover (~50 ms interruption).</p>
+
+  <div class="arch-diagram">
+    <pre>
+  UE        Source eNB    Target eNB       MME            SGW
+
+   │             │              │            │              │
+   │─MEAS RPT──►│              │            │              │
+   │             │─HO Decision  │            │              │
+   │             │─X2 HO Req──►│            │              │
+   │             │◄─X2 HO Req ACK─          │              │
+   │◄─RRC HO CMD─│              │            │              │
+   │─── (UE detaches from source, accesses target) ──────── │
+   │─RACH──────────────────────►│            │              │
+   │◄─RAR──────────────────────│            │              │
+   │─RRC HO COMPLETE──────────►│            │              │
+   │             │◄─SN Status Transfer      │              │
+   │             │─────────────────────────►│ S1AP: PATH SWITCH REQ
+   │             │              │◄───────────│ PATH SWITCH ACK
+   │             │              │────────────────────────► MODIFY BEARER
+   │             │              │◄──────────────────────── MODIFY BEARER RSP
+   │             │─X2 UE CONTEXT RELEASE REQUEST─►         │
+    </pre>
+  </div>
+
+  <h4>Key X2 Handover Steps:</h4>
+  <p><strong>Measurement Reports:</strong> Based on RRC measurement configuration, the UE measures reference signal received power (RSRP) and RSRQ from neighboring cells and reports them to the serving eNB. The A3 event (neighbor becomes stronger than serving by offset) typically triggers handover.</p>
+
+  <p><strong>Handover Decision:</strong> The source eNB decides to hand over the UE, selects the target cell, and sends an X2AP Handover Request to the target eNB with the UE's context (security context, current QoS configuration, current C-RNTI).</p>
+
+  <p><strong>Target Preparation:</strong> The target eNB admits the UE (admission control), configures radio resources, and responds with an X2AP Handover Request Acknowledge containing the RRC Connection Reconfiguration message (the HO Command) that the source will forward to the UE.</p>
+
+  <p><strong>HO Command &amp; Execution:</strong> The source eNB forwards the HO Command to the UE in an RRC Connection Reconfiguration message. The UE immediately applies the configuration, disconnects from the source, and performs RACH on the target cell.</p>
+
+  <p><strong>SN Status Transfer:</strong> The source eNB sends an SN (Sequence Number) Status Transfer to the target, reporting which PDCP SDUs have been acknowledged and which are in-flight — this enables the target to resume from the correct point without packet loss or duplication.</p>
+
+  <p><strong>Path Switch:</strong> The target eNB notifies the MME via S1AP Path Switch Request. The MME updates the SGW to switch the S1-U DL tunnel to the target eNB. The SGW confirms, and any buffered downlink packets are now sent to the target eNB.</p>
+
+  <h3>S1 Handover (Inter-MME or SGW Change)</h3>
+  <p>When X2 is unavailable or an MME/SGW change is needed (e.g., large geographic move), the S1 handover procedure is used. This involves more core network signalling but still achieves seamless handover. The source MME and target MME coordinate via S10, and the SGW may be relocated via S11 signalling.</p>
+
+  <h3>Inter-RAT Handover (LTE ↔ 3G/2G)</h3>
+  <p>For areas with LTE-to-WCDMA or LTE-to-GSM coverage transitions, inter-RAT handovers are performed. The MME interworks with the SGSN via S3 (GTPv2-C), transferring the UE's bearer context and security information. The UE performs a connected mode handover from LTE to WCDMA, or the network may use redirection (which is less seamless) for LTE to GSM.</p>
+</div>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<!-- SECTION 19 -->
+<!-- ============================================================ -->
+<div class="section" id="s19">
+  <span class="section-label">// SECTION 19</span>
+  <h2>Detach Procedure</h2>
+
+  <p>The Detach procedure gracefully disconnects a UE from the network, tearing down all bearers and deregistering from the MME. It can be UE-initiated (e.g., power off) or network-initiated (e.g., subscriber deactivated).</p>
+
+  <div class="arch-diagram">
+    <pre>
+  UE-Initiated Detach:
+
+  UE          eNB          MME          SGW          PGW          HSS
+
+   │─NAS Detach Request─────────────────────────────────────────  │
+   │  (Detach Type: "switch off" or "normal detach")              │
+   │            │────────────►│            │            │          │
+   │            │  S1AP UL NAS TRANSPORT                          │
+   │            │            │──Delete Session Req────►│          │
+   │            │            │            │────────────►│          │
+   │            │            │            │  Delete Session Req   │
+   │            │            │            │◄───────────────────── │
+   │            │            │◄──Delete Session Rsp──────────────│
+   │            │            │─────────────────────────────────► │
+   │            │            │  Purge UE Req (S6a)               │
+   │            │            │◄────────────────────────────────── │
+   │            │            │  Purge UE Ans                     │
+   │◄─NAS Detach Accept──────│            │            │          │
+   │            │◄───────────│  S1AP: UE CONTEXT RELEASE COMMAND │
+   │─RRC Connection Release──│            │            │          │
+   │            │────────────►│  S1AP: UE CONTEXT RELEASE COMPLETE
+    </pre>
+  </div>
+
+  <p>For a "switch off" detach, the network doesn't send a Detach Accept (since the UE is powering down and won't receive it). For a "normal detach," the network responds with Detach Accept before releasing the connection. The S1AP UE Context Release Command and corresponding RRC Connection Release complete the radio resource cleanup.</p>
+</div>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<!-- SECTION 20 -->
+<!-- ============================================================ -->
+<div class="section" id="s20">
+  <span class="section-label">// SECTION 20</span>
+  <h2>QoS Architecture</h2>
+
+  <p>LTE's Quality of Service (QoS) architecture is bearer-based and end-to-end. It provides mechanisms to guarantee bandwidth, prioritize traffic, and manage congestion across the entire system from the UE to the PDN.</p>
+
+  <h3>QoS Parameter Definitions</h3>
+
+  <table class="data-table">
+    <thead>
+      <tr><th>Parameter</th><th>Full Name</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>QCI</td><td>QoS Class Identifier</td><td>Scalar 1–9 (or 65–70, 75, 79, 80, 82–85 for operators) mapping to pre-configured PHY/MAC treatment: packet error rate, delay budget, scheduler priority.</td></tr>
+      <tr><td>ARP</td><td>Allocation and Retention Priority</td><td>Priority Level (1–15), Pre-emption Capability (can this bearer pre-empt others?), Pre-emption Vulnerability (can this bearer be pre-empted?). Controls admission control decisions.</td></tr>
+      <tr><td>GBR</td><td>Guaranteed Bit Rate</td><td>Minimum bitrate guaranteed to the bearer (DL and UL separately). Set for QCI 1–4. Enforced at eNB scheduler and PGW.</td></tr>
+      <tr><td>MBR</td><td>Maximum Bit Rate</td><td>Upper cap on bearer throughput. Even if network has capacity, bearer won't exceed MBR. Applies to GBR bearers (GBR=MBR for constant-bitrate services like voice).</td></tr>
+      <tr><td>AMBR</td><td>Aggregate Maximum Bit Rate</td><td>Total bitrate cap across all non-GBR bearers for a UE (UE-AMBR) or per APN (APN-AMBR). Prevents a single user from monopolizing capacity on non-GBR bearers.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>End-to-End QoS Enforcement Points</h3>
+  <div class="arch-diagram">
+    <pre>
+  QoS Enforcement along the data path:
+
+  UE ──────── eNB ──────── SGW ──────── PGW ──────── Internet
+
+  │           │            │            │
+  │  Radio    │  S1-U      │  S5/S8     │  SGi
+  │  Bearer   │  GTP-U     │  GTP-U     │
+  │  (DRB)    │  (DSCP     │  (DSCP     │
+  │           │   marking) │   marking) │
+  │           │            │            │
+  └─ MAC      └─ L3/L4     └─ L3/L4     └─ TFT Filter
+    Scheduler   Marking      Marking       Policing
+    (QCI→prio)               PCEF
+    HARQ                     AMBR+MBR
+    Admission                enforcement
+    Control
+    </pre>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<!-- SECTION 21 -->
+<!-- ============================================================ -->
+<div class="section" id="s21">
+  <span class="section-label">// SECTION 21</span>
+  <h2>EPS Bearer Model</h2>
+
+  <p>The EPS Bearer is the fundamental concept for user-plane connectivity in LTE. Each bearer is a logical pipe between the UE and a PDN, characterized by specific QoS parameters and used to carry a specific class of IP traffic.</p>
+
+  <div class="arch-diagram">
+    <pre>
+  EPS Bearer Model:
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │                    EPS Bearer (End-to-End)                   │
+  │  UE ─────── eNB ─────── SGW ─────── PGW ─────── PDN        │
+  │                                                              │
+  │  ┌───────┐  ┌────────────┐  ┌──────────────┐               │
+  │  │  RB   │  │  S1 Bearer │  │  S5/S8 Bearer│               │
+  │  │(radio)│  │(eNB↔SGW)  │  │  (SGW↔PGW)  │               │
+  │  └───────┘  └────────────┘  └──────────────┘               │
+  └─────────────────────────────────────────────────────────────┘
+
+  A UE may have multiple concurrent bearers:
+
+  ┌────────────────────────────────────────────────────────────┐
+  │  UE Bearer Set (Example — VoLTE User)                      │
+  │                                                            │
+  │  EBI=5  QCI=9  APN=internet     → Default Bearer          │
+  │  EBI=6  QCI=5  APN=ims          → Default IMS Bearer      │
+  │  EBI=7  QCI=1  APN=ims  GBR     → Dedicated Voice Bearer  │
+  │  EBI=8  QCI=2  APN=ims  GBR     → Dedicated Video Bearer  │
+  └────────────────────────────────────────────────────────────┘
+    </pre>
+  </div>
+
+  <h3>Bearer Modification</h3>
+  <p>Bearers can be modified after creation to change QoS parameters. This is used when:</p>
+  <p>A video call upgrades from audio-only (modify bearer from QCI=1 audio to add QCI=2 video). A fair-use policy throttles a user's AMBR mid-session. The PCRF updates PCC rules (e.g., at midday peak hours, non-GBR bearers are rate-limited). The modification procedure mirrors the creation procedure but uses Modify Bearer / Update Bearer commands on the S11 and S5/S8 interfaces.</p>
+</div>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<!-- SECTION 22 -->
+<!-- ============================================================ -->
+<div class="section" id="s22">
+  <span class="section-label">// SECTION 22</span>
+  <h2>Idle Mode &amp; Paging</h2>
+
+  <p>When a UE has no active data transfer, it transitions to RRC_IDLE to conserve battery power. In idle mode, the UE disconnects from the radio but remains registered with the network (EMM-REGISTERED). The network can still page the UE when incoming data arrives.</p>
+
+  <h3>Idle Mode Behavior</h3>
+
+  <div class="flow-step">
+    <div class="step-num">DRX</div>
+    <div class="step-body">
+      <div class="step-title">Discontinuous Reception (DRX)</div>
+      <div class="step-desc">In idle mode, the UE uses DRX cycles (ranging from 320 ms to 2.56 seconds for LTE paging DRX) to wake up periodically, check for paging messages, and sleep again. This dramatically reduces battery consumption — a UE may only be "awake" for a few milliseconds per DRX cycle.</div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <div class="step-num">TAU</div>
+    <div class="step-body">
+      <div class="step-title">Tracking Area Update (TAU)</div>
+      <div class="step-desc">The UE monitors which cells it camps on and performs a Tracking Area Update (TAU) when it moves to a cell in a new Tracking Area not in its assigned TAL (Tracking Area List). The TAU informs the MME of the UE's new location so paging can be directed to the correct area. Periodic TAUs are also configured (e.g., every 54 minutes) to confirm UE is still reachable.</div>
+    </div>
+  </div>
+
+  <h3>Paging Procedure</h3>
+  <div class="arch-diagram">
+    <pre>
+  Downlink data arrives for idle UE:
+
+  Internet → PGW → SGW [buffers DL data, triggers paging]
+                    │
+                    │──S11: Downlink Data Notification──►MME
+                    │◄─S11: Downlink Data Notification Ack─
+                    │
+                    ├──S1AP: PAGING (to all eNBs in UE's tracking areas)
+                    │
+  eNBs broadcast PAGING message on PCCH (Paging Control Channel)
+  at UE's Paging Occasion (derived from UE_ID mod N)
+                    │
+  UE receives paging, initiates Service Request:
+  UE ─RACH─► eNB ─RRC Conn Setup─► UE
+  UE ─Service Request (NAS)──────────────►MME
+  MME sets up S1 context (Initial Context Setup)
+  MME ─S11: Modify Bearer Req──────────────────► SGW
+  SGW resumes downlink data forwarding to eNB
+    </pre>
+  </div>
+
+  <h3>Connected Mode DRX (C-DRX)</h3>
+  <p>Even in RRC_CONNECTED state, LTE supports Connected-mode DRX (C-DRX) where the UE sleeps between scheduled transmissions. C-DRX parameters (DRX cycle, on-duration timer, inactivity timer) are configured by the eNB and balance latency (shorter cycle) against power saving (longer cycle). A typical C-DRX cycle for a smartphone might be 80 ms with a 4 ms on-duration.</p>
+</div>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<!-- SECTION 23 -->
+<!-- ============================================================ -->
+<div class="section" id="s23">
+  <span class="section-label">// SECTION 23</span>
+  <h2>MIMO &amp; Physical Layer</h2>
+
+  <p>Multiple Input Multiple Output (MIMO) is a foundational technology in LTE, using multiple antennas at both the transmitter and receiver to increase spectral efficiency and reliability without additional spectrum.</p>
+
+  <h3>MIMO Transmission Modes</h3>
+  <table class="data-table">
+    <thead>
+      <tr><th>TM</th><th>Name</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>TM1</td><td>Single Antenna</td><td>One TX antenna. Used for coverage-limited scenarios.</td></tr>
+      <tr><td>TM2</td><td>Transmit Diversity</td><td>SFBC (Space-Frequency Block Coding) across 2 antennas. Improves link reliability at cell edge.</td></tr>
+      <tr><td>TM3</td><td>Open-Loop Spatial Mux</td><td>Multiple spatial streams without PMI feedback. Good for high-speed UEs where channel varies too fast for CSI.</td></tr>
+      <tr><td>TM4</td><td>Closed-Loop Spatial Mux</td><td>Multiple streams with PMI (Precoding Matrix Indicator) feedback from UE. Best capacity in good channel conditions.</td></tr>
+      <tr><td>TM7</td><td>Single-Layer Beamforming</td><td>Uses UE-specific reference signals. Non-codebook beamforming for flexible antenna arrays.</td></tr>
+      <tr><td>TM8</td><td>Dual-Layer Beamforming</td><td>Two simultaneous spatial streams with beamforming. Added in Release 9.</td></tr>
+      <tr><td>TM9</td><td>Up to 8-Layer MU-MIMO</td><td>Up to 8 spatial layers for a single UE. Requires 8-antenna eNB. Release 10 LTE-Advanced.</td></tr>
+      <tr><td>TM10</td><td>CoMP (Rel-11)</td><td>Coordinated Multi-Point: multiple eNBs coordinate transmission/reception for a UE.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>CSI Feedback</h3>
+  <p>Channel State Information (CSI) feedback is the mechanism by which the UE reports radio channel quality to the eNB. It consists of:</p>
+  <ul class="iface-list">
+    <li><span class="iname">CQI</span> Channel Quality Indicator (4 bits, 0–15). Maps to an MCS. The highest MCS supportable at ≤10% BLER.</li>
+    <li><span class="iname">PMI</span> Precoding Matrix Indicator. Tells the eNB which precoding matrix (from a codebook) best matches the channel.</li>
+    <li><span class="iname">RI</span> Rank Indicator. Number of independent spatial streams the channel can support (1–8).</li>
+  </ul>
+
+  <h3>Uplink: SC-FDMA</h3>
+  <p>The LTE uplink uses Single-Carrier FDMA (also called DFT-Spread OFDMA, DFT-S-OFDMA). Unlike pure OFDMA, SC-FDMA has a lower Peak-to-Average Power Ratio (PAPR), which is critical for UE battery life since the power amplifier can operate more efficiently. The UE performs a DFT across its subcarriers before the OFDM modulation, effectively spreading the signal across a single-carrier waveform.</p>
+</div>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<!-- SECTION 24 -->
+<!-- ============================================================ -->
+<div class="section" id="s24">
+  <span class="section-label">// SECTION 24</span>
+  <h2>VoLTE Call Flow</h2>
+
+  <p>Voice over LTE (VoLTE) is the standard mechanism for voice calls over LTE networks, using IMS (IP Multimedia Subsystem) to provide SIP-based signalling and RTP for voice media. This is fundamentally different from CSFB (Circuit-Switched Fallback), where the UE drops to 3G/2G for voice.</p>
+
+  <h3>IMS Architecture Overview</h3>
+  <div class="arch-diagram">
+    <pre>
+  IMS Architecture (simplified):
+
+  ┌───────────────────────────────────────────────────────────────┐
+  │                    IMS Network                                 │
+  │                                                               │
+  │  ┌──────────┐      ┌──────────┐      ┌──────────┐           │
+  │  │  P-CSCF  │─────►│  I-CSCF  │─────►│  S-CSCF  │          │
+  │  │  (Proxy) │      │(Interrogt)│      │ (Serving)│          │
+  │  └──────────┘      └──────────┘      └──────────┘          │
+  │       │                                    │                  │
+  │  ┌────┴──────────────────────────┐  ┌──────┴───────────┐    │
+  │  │  PCRF (Rx interface)          │  │   HSS (Cx/Dx)    │    │
+  │  └───────────────────────────────┘  └──────────────────┘    │
+  │                                                               │
+  │  ┌──────────┐      ┌──────────┐                              │
+  │  │  MGCF    │      │  BGCF    │  (PSTN/CS interworking)     │
+  │  └──────────┘      └──────────┘                              │
+  └───────────────────────────────────────────────────────────────┘
+    </pre>
+  </div>
+
+  <h3>IMS Node Functions</h3>
+  <ul class="iface-list">
+    <li><span class="iname">P-CSCF</span> Proxy-CSCF: First IMS contact point for the UE. Handles SIP signalling, interacts with PCRF for media authorization (Rx interface), provides SIP compression (SigComp).</li>
+    <li><span class="iname">I-CSCF</span> Interrogating-CSCF: Acts as entry point for incoming calls to the operator's IMS. Queries HSS to determine serving S-CSCF.</li>
+    <li><span class="iname">S-CSCF</span> Serving-CSCF: The central IMS signalling node for a registered UE. Performs registration, session control, service invocation (via ISC interface to application servers), and charging.</li>
+    <li><span class="iname">AS</span> Application Server: Hosts IMS services (voicemail, call forwarding, conferencing, push-to-talk). Connected to S-CSCF via ISC (SIP) interface.</li>
+    <li><span class="iname">MGCF</span> Media Gateway Control Function: Controls the Media Gateway (MGW) for interworking between IMS (VoLTE) and the PSTN/CS domain.</li>
+  </ul>
+
+  <h3>VoLTE Call Origination Flow</h3>
+  <div class="arch-diagram">
+    <pre>
+  UE-A         P-CSCF       S-CSCF       S-CSCF-B    P-CSCF-B    UE-B
+  (Caller)                  (A side)     (B side)                (Callee)
+
+   │─IMS Register──────────────────────────────────────────────────
+   │  (SIP REGISTER, with Contact, Supported: gruu, path headers)  │
+   │◄─200 OK (Registration complete)──────────────────────────────
+   │
+   │─SIP INVITE──────────►│────────────►│────────────────────────►│
+   │  SDP offer:          │             │  (routed via I-CSCF)     │
+   │  codec=AMR-NB        │             │                          │
+   │  media: RTP/UDP      │             │                          │
+   │                      │ (Rx CCR     │                          │
+   │                      │  to PCRF)   │                          │
+   │                      │             │────────────────────────►│
+   │                      │             │  SIP INVITE (SDP offer)  │
+   │◄─100 Trying──────────│             │                          │
+   │                      │             │◄───────────────────────── │
+   │◄─180 Ringing─────────│◄────────────│  183 Session Progress    │
+   │  (with SDP answer:   │             │  (SDP answer)            │
+   │   codec selected,    │             │                          │
+   │   B's RTP port)      │             │                          │
+   │                      │(Gx/Rx:      │                          │
+   │                      │ Dedic bearer│                          │
+   │                      │ QCI=1 setup)│                          │
+   │◄─────────────────────────────────── UE-B answers call ──────── │
+   │◄─200 OK─────────────────────────────────────────────────────── │
+   │─SIP ACK──────────────────────────────────────────────────────►│
+   │                                                               │
+   │═══════════════ RTP Voice Stream Flows (both directions) ═════ │
+   │  UE-A RTP──►PGW-A──►[Internet/IMS backbone]──►PGW-B──►UE-B   │
+   │◄════════════════════════════════════════════════════════════ ══│
+   │                                                               │
+   │─SIP BYE─────────────────────────────────────────────────────►│
+   │◄─200 OK───────────────────────────────────────────────────────│
+    </pre>
+  </div>
+
+  <h3>VoLTE Bearer Setup in Relation to IMS</h3>
+  <p>The key interaction during VoLTE is between SIP signalling and the QoS bearer establishment. When the P-CSCF receives the SDP answer (with media parameters), it sends an Rx AA-Request to the PCRF with the media parameters. The PCRF correlates this with the Gx session and installs a PCC rule creating a dedicated QCI=1 bearer on the PGW. This dedicated bearer is established before the call connects (during the 183/180 exchange), ensuring media can flow immediately when the call is answered.</p>
+</div>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<!-- SECTION 25 -->
+<!-- ============================================================ -->
+<div class="section" id="s25">
+  <span class="section-label">// SECTION 25</span>
+  <h2>Roaming Architecture</h2>
+
+  <p>LTE supports international roaming where a UE uses its home operator's subscription on a visited network. This involves specific interfaces and procedures to authorize the roamer and ensure correct billing.</p>
+
+  <h3>Roaming Scenarios</h3>
+  <div class="cards">
+    <div class="card blue">
+      <div class="card-tag">LOCAL BREAKOUT</div>
+      <h4>LBO Roaming</h4>
+      <p>Data traffic exits to the internet through the Visited PLMN's PGW (vPGW). Lower latency for internet access. PCRF interaction via S9 interface between V-PCRF and H-PCRF. S8 interface (variant of S5) connects vSGW to vPGW.</p>
+    </div>
+    <div class="card green">
+      <div class="card-tag">HOME ROUTED</div>
+      <h4>Home Routed Roaming</h4>
+      <p>Data is tunneled all the way back to the Home PLMN's PGW (hPGW). Allows home operator full control and policy enforcement. S8 interface connects vSGW to hPGW across the PLMN boundary. Higher latency but simpler policy.</p>
+    </div>
+  </div>
+
+  <h3>Roaming Signalling Flow</h3>
+  <div class="arch-diagram">
+    <pre>
+  Visited Network (VPLMN)          │  Home Network (HPLMN)
+                                   │
+  UE──eNB──vMME──vSGW              │  hHSS  hPGW  hPCRF
+               │                   │
+   1. UE attaches to VPLMN eNB    │
+   2. vMME receives Attach Request │
+   3. vMME queries hHSS via S6a───────────────►hHSS
+      (Diameter over roaming hub) │◄───────────hHSS
+   4. Auth vectors returned       │
+   5. Authentication performed    │
+   6. vMME creates session:       │
+      - Home Routed: vSGW─S8─────────────────►hPGW
+      - LBO: vSGW─S5─vPGW        │
+   7. hPCRF policy via S9:        │
+      V-PCRF─S9──────────────────────────────►hPCRF
+    </pre>
+  </div>
+
+  <h3>GRX/IPX — Roaming Interconnect</h3>
+  <p>The GPRS Roaming Exchange (GRX), now evolved into IP eXchange (IPX), is the global interconnect network for mobile roaming signalling and data. Operators connect their S6a, S8, S9, S10, and Diameter Signalling Routers to the IPX network, enabling signalling to flow between any two connected operators' core networks worldwide.</p>
+
+  <h3>Visited Network Authorization</h3>
+  <p>The vMME verifies that the roaming UE's home PLMN is on the visited network's allowed roaming list (stored locally and synchronized with the home operator's roaming agreement). Subscription-level roaming restrictions (e.g., data roaming disabled by subscriber, or ODB — Operator Determined Barring) are enforced by the hHSS and communicated via the ULA response during attach.</p>
+
+  <div class="highlight orange">
+    <p><strong>Diameter Routing Agent (DRA):</strong> In large networks, Diameter Routing Agents sit between Diameter nodes to route messages efficiently, provide load balancing across multiple MMEs and HSSes, and handle inter-operator Diameter routing across the IPX/GRX. The DRA is defined at reference points Dh (to HSS) and Dm (between DRAs).</p>
+  </div>
+</div>
+
+<!-- Final summary -->
+<div class="divider"></div>
+
+<div class="section">
+  <span class="section-label">// SUMMARY</span>
+  <h2>LTE System in Perspective</h2>
+
+  <p>LTE represents one of the most sophisticated mobile communications systems ever deployed. Its all-IP design, flat architecture, advanced radio techniques (OFDMA, MIMO), and rich QoS framework enable a diverse range of services — from simple SMS-over-SGs to multi-gigabit carrier-aggregated downloads and HD VoLTE calls.</p>
+
+  <p>Every interaction — from the millisecond scheduling decisions in the eNB's MAC scheduler to the Diameter exchanges between MME and HSS, from the X2 handover executing in under 50 ms to the PCRF dynamically adjusting bearers for a new video call — represents an elegant interplay of dozens of protocols, nodes, and interfaces working in concert.</p>
+
+  <p>LTE continues to evolve: its physical layer techniques now form the foundation of 5G NR, its EPC is evolving toward the 5G Core (5GC) with even greater separation of control and user planes (via the CUPS architecture, and ultimately the 5G SBA — Service-Based Architecture), and its QoS model has been generalized and extended to support network slicing in 5G.</p>
+
+  <div class="highlight green">
+    <p>Understanding LTE thoroughly — at the level of every interface, every protocol, every call flow step — provides the foundation for understanding not just current networks, but the entire trajectory of mobile telecommunications into the 5G era and beyond.</p>
+  </div>
+</div>
+
+</main>
+
+<footer>
+  3GPP TS 23.401 · TS 36.300 · TS 29.274 · TS 24.301 · TS 33.401 · TS 36.211–36.213 · TS 36.321–36.331
+  <br>LTE Architecture &amp; Call Flow Reference · Compiled from 3GPP Release 8–15 Specifications
+</footer>
+
+</body>
+</html>
