@@ -299,6 +299,26 @@ print(f"Account type: {account._account_type}")  # Works, but frowned upon
 print(f"Via name mangling: ₹{account._BankAccount__balance}")  # Works! Not truly private
 
 
+# ━━━━━━━━━━━━━━━━━━━━━ Extra ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+class Account:
+    def __init__(self):
+        self.__id = 101  # No trailing underscore
+        self.__id_ = 202  # One trailing underscore
+        self.__id__ = 303  # Two trailing underscores (Dunder)
+
+
+acc = Account()
+print(acc.__dict__)
+
+
+# Output:
+# {
+#   '_Account__id': 101,
+#   '_Account__id_': 202,
+#   '__id__': 303
+# }
+
+
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # SECTION 4: PROPERTIES — @property, getter, setter, deleter
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
